@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, interactive-widget=resizes-content">
+    <title>ExpressTracker</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ExpressTracker">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- SheetJS do obsługi Excela w przyszłości -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+    <!-- GŁÓWNY KONTENER NA WIDOKI -->
+    <main id="app-content">
+        <!-- WIDOK 1: REJESTRACJA CZASU -->
+        <section id="view-tracker" class="view active">
+            <h1>ExpressTracker</h1>
+            <br>
+            
+            <div class="tracker-box">
+                <div class="session-info">
+                    <p id="current-date">Data: ---</p>
+                    <p id="start-time-display">Start: ---</p>
+                    <button id="btn-edit-start" class="btn-blue-small">Edytuj</button>
+                </div>
+
+                <div class="tracker-display">00:00:00</div>
+                <div class="earnings-display">Zarobek: 0.00 zł</div>
+            </div>
+
+            <div id="threshold-warning" class="hidden">
+                Większa wypłata za: <strong id="threshold-countdown">--:--</strong><br>
+                <span id="threshold-hint">Pracuj dalej, aby osiągnąć wyższy próg!</span>
+            </div>
+            <br>
+
+            <button id="btn-toggle-work">Rozpocznij pracę</button>
+        </section>
+
+        <!-- WIDOK 2: ZESTAWIENIE -->
+        <section id="view-reports" class="view hidden">
+            <h1>Zestawienie pracy</h1>
+            <br>
+            <button id="btn-add-session" class="btn-blue" style="width: 100%; margin-bottom: 20px; padding: 15px;">+ Dodaj nowy wpis</button>
+            <div id="reports-list"></div>
+        </section>
+
+        <!-- WIDOK 3: EXCEL -->
+        <section id="view-excel" class="view hidden">
+            <h1>Porównaj z Excelem</h1>
+            <br>
+            <div class="file-upload-wrapper">
+                <label for="excel-upload" class="btn-blue" style="text-align: center; display: block; padding: 15px;">Wgraj plik rozliczeniowy (.xlsx)</label>
+                <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden-input">
+            </div>
+            
+            <div id="excel-results">
+                <p style="text-align: center; color: #888;">Wgraj plik, aby zobaczyć zestawienie.</p>
+            </div>
+        </section>
+
+        <!-- WIDOK 4: USTAWIENIA -->
+        <section id="view-settings" class="view hidden">
+            <h1>Ustawienia</h1>
+            <br>
+            <div class="rate-card">
+                <div class="rate-info">
+                    <span>Stawka godzinowa</span>
+                    <strong id="current-rate-display">34 zł/h</strong>
+                </div>
+                <button id="btn-change-rate" class="btn-blue">Zmień</button>
+            </div>
+
+            <div class="rate-card" style="margin-top: 15px;">
+                <div class="rate-info">
+                    <span>Stawka za soboty (stała)</span>
+                    <strong id="current-sat-rate-display">396 zł</strong>
+                </div>
+                <button id="btn-change-sat-rate" class="btn-blue">Zmień</button>
+            </div>
+            
+            <div class="action-buttons-row">                
+                <label for="btn-import" class="btn-blue">Importuj dane (JSON)</label>
+                <input type="file" id="btn-import" accept=".json" class="hidden-input">
+
+                <button id="btn-export" class="btn-blue">Eksportuj dane (JSON)</button>
+            </div>
+
+            <button id="btn-export-excel" class="btn-blue" style="width: 100%;  background-color: #217346; padding: 15px;">Eksportuj raporty do Excela</button>
+            <button id="btn-clear-data" class="btn-danger" style="width: 100%; padding: 15px;">Usuń wszystkie dane</button>
+        </section>
+    </main>
+
+    <!-- DOLNY NAV BAR -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-target="view-tracker">🕒 Praca</button>
+        <button class="nav-item" data-target="view-reports">📋 Raporty</button>
+        <button class="nav-item" data-target="view-excel">📊 Excel</button>
+        <button class="nav-item" data-target="view-settings">⚙️ Opcje</button>
+    </nav>
+
+    <!-- OKNO MODALNE -->
+     <div id="custom-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 id="modal-title">Tytuł</h3>
+            <p id="modal-message" class="hidden"></p>
+            <input type="text" id="modal-input" class="hidden" placeholder="Wprowadź wartość">
+
+            <div class="modal-actions">
+                <button id="modal-btn-confirm" class="btn-blue">Zatwierdź</button>
+                <button id="modal-btn-cancel" class="btn-secondary">Anuluj</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- import/export w JS -->
+    <script type="module" src="js/app.js"></script>
+
+    <!-- Service Worker Check -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('PWA: Service Worker zarejestrowany pomyślnie!', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('PWA: Błąd rejestracji Service Workera:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
