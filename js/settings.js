@@ -137,7 +137,7 @@ export function initSettings() {
             const downloadAnchorNode = document.createElement('a');
             downloadAnchorNode.setAttribute("href", dataStr);
 
-            downloadAnchorNode.setAttribute("download", `rozliczenie_kopia_${new Date().toISOString().split('T')[0]}.json`);
+            downloadAnchorNode.setAttribute("download", `Express_Tracker_save_${new Date().toISOString().split('T')[0]}.json`);
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
@@ -188,7 +188,7 @@ export function initSettings() {
                 XLSX.utils.book_append_sheet(workbook, worksheet, "Moje Raporty");
 
                 const dateToday = new Date().toISOString().split('T')[0];
-                XLSX.writeFile(workbook, `ExpressTracker_Raporty_${dateToday}.xlsx`);
+                XLSX.writeFile(workbook, `Express_Tracker_Raporty_${dateToday}.xlsx`);
             } catch (error) {
                 console.error("Błąd generowania Excela:", error);
                 await showAlert('Błąd', 'Wystąpił błąd podczas generowania pliku Excel.');
