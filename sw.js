@@ -1,7 +1,6 @@
 const CACHE_NAME = 'expresstracker-v1.1';
 
 const ASSETS_TO_CACHE = [
-    './',
     './index.html',
     './css/styles.css',
     './js/app.js',
@@ -18,6 +17,8 @@ const ASSETS_TO_CACHE = [
 
 // Instalacja (Cache)
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
+    
     event.waitUntil(
         caches.open(CACHE_NAME)
         .then((cache) => {
@@ -39,6 +40,8 @@ self.addEventListener('fetch', (event) => {
 
 // Aktualizacja: usuwanie starych wersji cache, gdy aktywna jest nowa wersja
 self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+    
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
