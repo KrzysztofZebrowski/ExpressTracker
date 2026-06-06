@@ -1,6 +1,6 @@
 {
-  "name": "ExpressTracker",
-  "short_name": "ExpressTracker",
+  "name": "Express Tracker",
+  "short_name": "Express Tracker",
   "description": "Aplikacja do rejestrowania czasu pracy i zarobków",
   "start_url": "./index.html",
   "display": "standalone",

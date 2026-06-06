@@ -40,7 +40,6 @@ export function initSettings() {
                     const settings = Storage.getSettings();
                     settings.hourlyRate = newRate;
                     
-                    
                     if (typeof Storage.setSettings === 'function') {
                         Storage.setSettings(settings);
                     } else {
@@ -86,6 +85,46 @@ export function initSettings() {
         });
     }
 
+
+    // OBSŁUGA CZASU OSTRZEGANIA (W MILISEKUNDACH)
+
+    const warningDisplay = document.getElementById('current-early-warning-display');
+    const warningButtons = document.querySelectorAll('.btn-warning-time');
+
+    function updateWarningSettingsUI() {
+        // Pobieramy czas w milisekundach (zabezpieczenie: domyślnie 300000 ms = 5 min)
+        let currentMs = 300000;
+        if (typeof Storage.getWarningMinutes === 'function') {
+            currentMs = Storage.getWarningMinutes();
+        }
+
+        // Przeliczamy milisekundy na minuty tylko po to, by ładnie wyświetlić tekst
+        const displayMins = currentMs / 60000;
+        if (warningDisplay) warningDisplay.textContent = displayMins + ' min';
+        
+        // Aktualizujemy wygląd przycisków
+        warningButtons.forEach(btn => {
+            if (parseInt(btn.dataset.time, 10) === currentMs) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    warningButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Pobieramy milisekundy z atrybutu data-time wybranego przycisku
+            const selectedMs = parseInt(e.target.dataset.time, 10);
+            if (typeof Storage.setWarningMinutes === 'function') {
+                Storage.setWarningMinutes(selectedMs); // Zapisujemy gotowe milisekundy
+            }
+            updateWarningSettingsUI(); 
+        });
+    });
+
+    updateWarningSettingsUI();
+
     // 5. Eksport danych do pliku JSON
     if (btnExport) {
         btnExport.addEventListener('click', () => {
@@ -102,6 +141,12 @@ export function initSettings() {
             document.body.appendChild(downloadAnchorNode);
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
+
+            // Aktualizacja daty ostatniego eksportu
+            if (typeof Storage.setLastExportDate === 'function') {
+                Storage.setLastExportDate();
+                document.getElementById('export-reminder-card')?.classList.add('hidden');
+            }
         });
     }
 

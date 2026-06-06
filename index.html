@@ -47,6 +47,38 @@
             <br>
 
             <button id="btn-toggle-work">Rozpocznij pracę</button>
+
+            <div id="export-reminder-card" class="rate-card hidden" style="margin-top: 20px; background-color: #f0f8ff; border: 1px solid #bae6fd; padding: 16px; display: block; box-shadow: none;">
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <span style="font-size: 26px; line-height: 1;">💾</span>
+                    <div>
+                        <strong style="color: #0369a1; font-size: 15px; display: block; margin-bottom: 4px;">
+                            Czas na kopię zapasową
+                        </strong>
+                        <p style="font-size: 13px; color: #475569; margin: 0; line-height: 1.4;">
+                            Minęło już 30 dni. Przejdź do zakładki <b>Opcje</b> i pobierz plik JSON, aby bezpiecznie zachować historię swoich tras.
+                        </p>
+                    </div>
+                </div>
+                
+                <button id="btn-snooze-export" style="width: 100%; margin-top: 15px; background-color: #e0f2fe; color: #0284c7; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;">
+                    Przypomnij mi za tydzień
+                </button>
+            </div>
+
+            <div id="whats-new-card" class="rate-card hidden" style="margin-top: 25px; display: block; border-left: 4px solid var(--blue);">
+                <div style="font-weight: bold; margin-bottom: 10px; font-size: 16px;">
+                    Co nowego w apce?
+                </div>
+                <ul style="font-size: 14px; color: #666; padding-left: 20px; line-height: 1.6; margin: 0;">
+                    <li><strong>Prawdziwa aplikacja (PWA):</strong> <br>Dodaj ExpressTracker do ekranu głównego (działa bez internetu!)</li>
+                    <li><strong>Elastyczne ostrzeżenia:</strong> <br>Wybierz w Opcjach czy wolisz alert na 5, 10 czy 15 minut przed ucięciem stawki</li>
+                    <li><strong>Przypomnienie o eksportach:</strong> <br>Automatyczne przypomnienie co 30 dni o potrzebie eksportu danych</li>
+                </ul>
+
+                <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0 10px 0;">
+                <button id="btn-hide-whats-new" class="btn-blue bold" style="display: block; margin: 0 auto; min-width: 120px; padding: 10px 0; border: 1px solid var(--blue);">OK</button>
+            </div>
         </section>
 
         <!-- WIDOK 2: ZESTAWIENIE -->
@@ -69,6 +101,12 @@
             <div id="excel-results">
                 <p style="text-align: center; color: #888;">Wgraj plik, aby zobaczyć zestawienie.</p>
             </div>
+
+            <div id="rip-excel" style="margin-top: 50px; text-align: center;">
+                <h4 style="text-align: center; color: #888;">Niestety era Excelków z rozliczeniami dobiegła końca wraz z uruchomieniem mikroserwisu</h4>
+                <br>
+                <h1 style="text-align: center; color: #888;">😢</h1>
+            </div>
         </section>
 
         <!-- WIDOK 4: USTAWIENIA -->
@@ -83,12 +121,25 @@
                 <button id="btn-change-rate" class="btn-blue">Zmień</button>
             </div>
 
-            <div class="rate-card" style="margin-top: 15px;">
+            <div class="rate-card">
                 <div class="rate-info">
                     <span>Stawka za soboty (stała)</span>
                     <strong id="current-sat-rate-display">396 zł</strong>
                 </div>
                 <button id="btn-change-sat-rate" class="btn-blue">Zmień</button>
+            </div>
+
+            <div class="rate-card" style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="text-align: center;">
+                    <span style="display: block; font-size: 0.85em; opacity: 0.8; margin-bottom: 5px;">Ostrzeganie przed zbyt wczesnym wylogowaniem</span>
+                    <strong id="current-early-warning-display" style="font-size: 1.4em;">5 min</strong>
+                </div>
+                
+                <div class="action-buttons-row" style="display: flex; gap: 10px; width: 100%; align-items: center; justify-content: center; height: 50px;">
+                    <button class="btn-warning-time" data-time="300000">5</button>
+                    <button class="btn-warning-time" data-time="600000">10</button>
+                    <button class="btn-warning-time" data-time="900000">15</button>
+                </div>
             </div>
             
             <div class="action-buttons-row">                
@@ -98,7 +149,7 @@
                 <button id="btn-export" class="btn-blue">Eksportuj dane (JSON)</button>
             </div>
 
-            <button id="btn-export-excel" class="btn-blue" style="width: 100%;  background-color: #217346; padding: 15px;">Eksportuj raporty do Excela</button>
+            <button id="btn-export-excel" class="btn-blue" style="width: 100%; background-color: #217346; padding: 15px; margin-bottom: 10px;">Eksportuj raporty do Excela</button>
             <button id="btn-clear-data" class="btn-danger" style="width: 100%; padding: 15px;">Usuń wszystkie dane</button>
         </section>
     </main>

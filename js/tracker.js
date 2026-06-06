@@ -106,7 +106,14 @@ function updateUI() {
             thresholdWarning.classList.add('hidden');
         } else {
             const remainingMs = getNextThresholdMs(elapsed);
-            if (remainingMs <= 300000) {
+            
+            // --- POBIERANIE BEZPOŚREDNIO W MILISEKUNDACH ---
+            let warningThresholdMs = 300000; // Domyślnie 5 min
+            if (typeof Storage.getWarningMinutes === 'function') {
+                warningThresholdMs = Storage.getWarningMinutes();
+            }
+
+            if (remainingMs <= warningThresholdMs) {
                 thresholdWarning.classList.remove('hidden');
                 thresholdWarning.classList.add('urgent');
                 thresholdCountdown.textContent = formatCountdown(remainingMs);
@@ -196,6 +203,48 @@ export function initTracker() {
     thresholdWarning = document.getElementById('threshold-warning');
     thresholdCountdown = document.getElementById('threshold-countdown');
     thresholdHint = document.getElementById('threshold-hint');
+
+    // --- OBSŁUGA PRZYPOMNIENIA O EKSPORCIE ---
+    const exportReminderCard = document.getElementById('export-reminder-card');
+    const btnSnoozeExport = document.getElementById('btn-snooze-export');
+
+    if (exportReminderCard && btnSnoozeExport && typeof Storage.getLastExportDate === 'function') {
+        const lastExport = Storage.getLastExportDate();
+        const now = Date.now();
+        const days30 = 30 * 24 * 60 * 60 * 1000; // 30 dni w milisekundach
+
+        // Jeśli minęło 30 dni
+        if (now - lastExport >= days30) {
+            exportReminderCard.classList.remove('hidden');
+        }
+
+        // Drzemka na 7 dni
+        btnSnoozeExport.addEventListener('click', () => {
+            exportReminderCard.classList.add('hidden');
+            // Hack z drzemką: Zapisujemy "ostatni eksport" jako datę sprzed 23 dni. 
+            // Dzięki temu (23 dni + 7 dni = 30) i karta pokaże się za równe 7 dni!
+            const snoozeTime = Date.now() - (23 * 24 * 60 * 60 * 1000);
+            Storage.setLastExportDate(snoozeTime);
+        });
+    }
+    // -----------------------------------------
+
+    // --- OBSŁUGA KARTY "CO NOWEGO" ---
+    const whatsNewCard = document.getElementById('whats-new-card');
+    const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
+
+    if (whatsNewCard && btnHideWhatsNew) {
+        let messageName = 'test1';
+        
+        if (localStorage.getItem(messageName) !== 'true') {
+            whatsNewCard.classList.remove('hidden');
+        }
+
+        btnHideWhatsNew.addEventListener('click', () => {
+            whatsNewCard.classList.add('hidden'); 
+            localStorage.setItem(messageName, 'true');
+        });
+    }
 
     if (!btnToggle) return;
 
