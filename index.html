@@ -79,6 +79,7 @@
                 <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0 10px 0;">
                 <button id="btn-hide-whats-new" class="btn-blue bold" style="display: block; margin: 0 auto; min-width: 120px; padding: 10px 0; border: 1px solid var(--blue);">OK</button>
             </div>
+            <h1>TEST PWA</h1>
         </section>
 
         <!-- WIDOK 2: ZESTAWIENIE -->
@@ -183,7 +184,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=1.3')
+                navigator.serviceWorker.register('./sw.js?v=3')
                     .then((registration) => {
                         console.log('PWA: Service Worker zarejestrowany pomyślnie!', registration.scope);
                     })
