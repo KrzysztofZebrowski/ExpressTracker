@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expresstracker-v1.2';
+const CACHE_NAME = 'expresstracker-v1.3';
 
 const ASSETS_TO_CACHE = [
     './index.html',
@@ -12,7 +12,7 @@ const ASSETS_TO_CACHE = [
     './js/excel.js',
     './manifest.json',
     './icons/icon.png',
-    'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js'
+    // 'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js'
 ];
 
 // Instalacja (Cache)
