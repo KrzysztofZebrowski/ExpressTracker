@@ -168,6 +168,9 @@ async function stopWork() {
     
     btnToggle.textContent = 'Rozpocznij pracę';
     btnToggle.classList.remove('active-btn');
+
+    document.querySelector('.tracker-box').classList.remove('timer-running');
+
     timeDisplay.textContent = '00:00:00';
     earningsDisplay.textContent = 'Zarobek: 0.00 zł';
     updateSessionInfo(null);
@@ -187,6 +190,8 @@ function startWork() {
     
     btnToggle.textContent = 'Zakończ pracę';
     btnToggle.classList.add('active-btn');
+
+    document.querySelector('.tracker-box').classList.add('timer-running');
     
     intervalId = setInterval(updateUI, 1000);
     updateUI();
@@ -221,8 +226,6 @@ export function initTracker() {
         // Drzemka na 7 dni
         btnSnoozeExport.addEventListener('click', () => {
             exportReminderCard.classList.add('hidden');
-            // Hack z drzemką: Zapisujemy "ostatni eksport" jako datę sprzed 23 dni. 
-            // Dzięki temu (23 dni + 7 dni = 30) i karta pokaże się za równe 7 dni!
             const snoozeTime = Date.now() - (23 * 24 * 60 * 60 * 1000);
             Storage.setLastExportDate(snoozeTime);
         });
@@ -234,7 +237,7 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'test1';
+        let messageName = 'news-v1.3.4';
         
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');
@@ -277,7 +280,6 @@ export function initTracker() {
                 return await showAlert('Błąd', 'Czas rozpoczęcia nie może być w przyszłości!');
             }
 
-            // Nadpisz czas i wymuś odświeżenie UI
             startTime = newDate.getTime();
             Storage.setActiveSession(startTime);
             updateSessionInfo(startTime);
@@ -292,6 +294,9 @@ export function initTracker() {
         updateSessionInfo(startTime);
         btnToggle.textContent = 'Zakończ pracę';
         btnToggle.classList.add('active-btn');
+
+        document.querySelector('.tracker-box').classList.add('timer-running');
+
         intervalId = setInterval(updateUI, 1000);
         updateUI();
     } else {

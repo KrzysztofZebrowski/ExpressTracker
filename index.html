@@ -16,8 +16,6 @@
     <link rel="apple-touch-icon" href="icon.png">
 
     <link rel="stylesheet" href="css/styles.css">
-
-    <!-- SheetJS do obsługi Excela w przyszłości -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -26,7 +24,7 @@
     <main id="app-content">
         <!-- WIDOK 1: REJESTRACJA CZASU -->
         <section id="view-tracker" class="view active">
-            <h1>ExpressTracker</h1>
+            <h1>Express Tracker</h1>
             <br>
             
             <div class="tracker-box">
@@ -71,9 +69,8 @@
                     Co nowego w apce?
                 </div>
                 <ul style="font-size: 14px; color: #666; padding-left: 20px; line-height: 1.6; margin: 0;">
-                    <li><strong>Prawdziwa aplikacja (PWA):</strong> <br>Dodaj ExpressTracker do ekranu głównego. Działa bez internetu i automatycznie się aktualizuje</li>
-                    <li><strong>Elastyczne ostrzeżenia:</strong> <br>Wybierz w Opcjach czy wolisz alert na 5, 10 czy 15 minut przed ucięciem stawki</li>
-                    <li><strong>Przypomnienie o eksportach:</strong> <br>Automatyczne przypomnienie co 30 dni o potrzebie eksportu danych</li>
+                    <li><strong>Upgrade UI:</strong> <br>Lekkie odświeżenie interfejsu użytkownika</li>
+                    <li><strong>Poprawki do PWA</strong> <br>Zmiana mechanizmu cache'owania</li>
                 </ul>
 
                 <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0 10px 0;">
@@ -152,6 +149,21 @@
             <button id="btn-export-excel" class="btn-blue" style="width: 100%; background-color: #217346; padding: 15px; margin-bottom: 10px;">Eksportuj raporty do Excela</button>
             <button id="btn-clear-data" class="btn-danger" style="width: 100%; padding: 15px;">Usuń wszystkie dane</button>
         </section>
+
+        <!-- KARTA INSTALACJI PWA -->
+        <div id="install-pwa-card" class="rate-card hidden" style="position: fixed; bottom: 85px; left: 5%; width: 90%; z-index: 1000; border: 2px solid var(--blue); box-shadow: var(--shadow-modal);">
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <span style="font-size: 32px;">📲</span>
+                <div>
+                    <strong style="font-size: 16px; color: var(--text);">Zainstaluj aplikację</strong>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Dodaj ExpressTracker do ekranu głównego, aby działał offline jako pełnoprawna aplikacja.</p>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 15px;">
+                <button id="btn-install-pwa" class="btn-blue">Zainstaluj</button>
+                <button id="btn-close-pwa" class="btn-secondary">Później</button>
+            </div>
+        </div>
     </main>
 
     <!-- DOLNY NAV BAR -->
@@ -183,7 +195,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=3')
+                navigator.serviceWorker.register('./sw.js?v=4')
                     .then((registration) => {
                         console.log('PWA: Service Worker zarejestrowany pomyślnie!', registration.scope);
                     })

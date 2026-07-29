@@ -12,20 +12,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     navItems.forEach(item => {
         item.addEventListener('click', () => {
-            // Usuń klasę active ze wszystkich przycisków i widoków
             navItems.forEach(nav => nav.classList.remove('active'));
             views.forEach(view => {
                 view.classList.remove('active');
                 view.classList.add('hidden');
             });
 
-            // Dodaj klase active do klikniętego przycisku i odpowiedniego widoku
             item.classList.add('active');
             const targetId = item.getAttribute('data-target');
             document.getElementById(targetId).classList.remove('hidden');
             document.getElementById(targetId).classList.add('active');
             
-            // Renderuj raporty przy przejściu do widoku raportów
             if (targetId === 'view-reports') {
                 renderReports(); 
             }
@@ -37,3 +34,44 @@ document.addEventListener('DOMContentLoaded', () => {
     initSettings();
     initExcel();
 });
+
+/* =========================================
+   OBSŁUGA INSTALACJI PWA
+========================================= */
+let deferredPrompt;
+const installCard = document.getElementById('install-pwa-card');
+const btnInstall = document.getElementById('btn-install-pwa');
+const btnClose = document.getElementById('btn-close-pwa');
+
+// Nasłuchiwanie na event systemowy (odpalany tylko gdy apka NIE JEST zainstalowana)
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    setTimeout(() => {
+        if (localStorage.getItem('pwa_install_dismissed') !== 'true' && installCard) {
+            installCard.classList.remove('hidden');
+        }
+    }, 2000);
+});
+
+if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Decyzja o instalacji PWA: ${outcome}`);
+            
+            deferredPrompt = null;
+            installCard.classList.add('hidden');
+        }
+    });
+}
+
+if (btnClose) {
+    btnClose.addEventListener('click', () => {
+        installCard.classList.add('hidden');
+        localStorage.setItem('pwa_install_dismissed', 'true');
+    });
+}

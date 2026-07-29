@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expresstracker-v1.3.2';
+const CACHE_NAME = 'expresstracker-v1.3.4';
 
 const ASSETS_TO_CACHE = [
     './index.html',
@@ -28,12 +28,26 @@ self.addEventListener('install', (event) => {
     );
 });
 
-// Pobieranie (Praca offline): gdy aplikacja prosi o plik, najpierw szukamy w Cache
 self.addEventListener('fetch', (event) => {
+
+    let cacheRequest = event.request;
+    if (event.request.url.endsWith('/')) {
+        cacheRequest = new Request('./index.html');
+    }
+
     event.respondWith(
-        caches.match(event.request)
-        .then((response) => {
-            return response || fetch(event.request);
+        fetch(event.request)
+        .then((networkResponse) => {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+                cache.put(cacheRequest, responseClone);
+            });
+            
+            return networkResponse;
+        })
+        .catch(() => {
+            console.log('Brak zasięgu! Ładowanie pliku z pamięci offline:', cacheRequest.url);
+            return caches.match(cacheRequest);
         })
     );
 });
