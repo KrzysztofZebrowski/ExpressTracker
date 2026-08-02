@@ -151,20 +151,22 @@
         </section>
 
         <!-- KARTA INSTALACJI PWA -->
-        <div id="install-pwa-card" class="rate-card hidden" style="position: fixed; bottom: 85px; left: 5%; width: 90%; z-index: 1000; border: 2px solid var(--blue); box-shadow: var(--shadow-modal);">
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <span style="font-size: 32px;">📲</span>
+        <div id="install-pwa-card" class="hidden" style="position: fixed; bottom: 85px; left: 5%; width: 90%; z-index: 1000; border: 2px solid var(--blue); box-shadow: var(--shadow-modal); background: white; border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 15px; box-sizing: border-box; animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
+            
+            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <span style="font-size: 32px; flex-shrink: 0; line-height: 1;">📲</span>
                 <div>
-                    <strong style="font-size: 16px; color: var(--text);">Zainstaluj aplikację</strong>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">Dodaj ExpressTracker do ekranu głównego, aby działał offline jako pełnoprawna aplikacja.</p>
+                    <strong style="font-size: 16px; color: var(--text); display: block; margin-bottom: 4px;">Zainstaluj aplikację</strong>
+                    <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4;">Dodaj ExpressTracker do ekranu głównego, aby działał offline jako pełnoprawna aplikacja.</p>
                 </div>
             </div>
-            <div class="modal-actions" style="margin-top: 15px;">
-                <button id="btn-install-pwa" class="btn-blue">Zainstaluj</button>
-                <button id="btn-close-pwa" class="btn-secondary">Później</button>
+
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="btn-install-pwa" class="btn-blue" style="flex: 1; margin: 0;">Zainstaluj</button>
+                <button id="btn-close-pwa" class="btn-secondary" style="flex: 1; margin: 0;">Później</button>
             </div>
+            
         </div>
-    </main>
 
     <!-- DOLNY NAV BAR -->
     <nav class="bottom-nav">
