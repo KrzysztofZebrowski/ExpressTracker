@@ -1,4 +1,4 @@
-const CACHE_NAME = 'expresstracker-v1.3.4';
+const CACHE_NAME = 'expresstracker-v1.3.5'; 
 
 const ASSETS_TO_CACHE = [
     './index.html',
@@ -11,11 +11,9 @@ const ASSETS_TO_CACHE = [
     './js/reports.js',
     './js/excel.js',
     './manifest.json',
-    './icons/icon.png',
-    // 'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js'
+    './icon.png'
 ];
 
-// Instalacja (Cache)
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     
@@ -25,34 +23,11 @@ self.addEventListener('install', (event) => {
             console.log('Zapisywanie plików w pamięci podręcznej...');
             return cache.addAll(ASSETS_TO_CACHE);
         })
+        .catch(err => console.error('Błąd zapisu do Cache (sprawdź ścieżki plików!):', err))
     );
 });
 
-self.addEventListener('fetch', (event) => {
 
-    let cacheRequest = event.request;
-    if (event.request.url.endsWith('/')) {
-        cacheRequest = new Request('./index.html');
-    }
-
-    event.respondWith(
-        fetch(event.request)
-        .then((networkResponse) => {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-                cache.put(cacheRequest, responseClone);
-            });
-            
-            return networkResponse;
-        })
-        .catch(() => {
-            console.log('Brak zasięgu! Ładowanie pliku z pamięci offline:', cacheRequest.url);
-            return caches.match(cacheRequest);
-        })
-    );
-});
-
-// Aktualizacja: usuwanie starych wersji cache, gdy aktywna jest nowa wersja
 self.addEventListener('activate', (event) => {
     event.waitUntil(clients.claim());
     
@@ -66,6 +41,34 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
+        })
+    );
+});
+
+// Network First
+self.addEventListener('fetch', (event) => {
+    if (!event.request.url.startsWith('http')) return;
+
+    event.respondWith(
+        fetch(event.request)
+        .then((networkResponse) => {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseClone);
+            });
+            return networkResponse;
+        })
+        .catch(() => {
+            return caches.match(event.request).then((cachedResponse) => {
+
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
+
+                if (event.request.mode === 'navigate') {
+                    return caches.match('./index.html');
+                }
+            });
         })
     );
 });

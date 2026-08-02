@@ -92,17 +92,15 @@ export function initSettings() {
     const warningButtons = document.querySelectorAll('.btn-warning-time');
 
     function updateWarningSettingsUI() {
-        // Pobieramy czas w milisekundach (zabezpieczenie: domyślnie 300000 ms = 5 min)
+        // Pobieramy czas w milisekundach (300000 ms = 5 min)
         let currentMs = 300000;
         if (typeof Storage.getWarningMinutes === 'function') {
             currentMs = Storage.getWarningMinutes();
         }
 
-        // Przeliczamy milisekundy na minuty tylko po to, by ładnie wyświetlić tekst
         const displayMins = currentMs / 60000;
         if (warningDisplay) warningDisplay.textContent = displayMins + ' min';
         
-        // Aktualizujemy wygląd przycisków
         warningButtons.forEach(btn => {
             if (parseInt(btn.dataset.time, 10) === currentMs) {
                 btn.classList.add('active');
@@ -114,10 +112,9 @@ export function initSettings() {
 
     warningButtons.forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Pobieramy milisekundy z atrybutu data-time wybranego przycisku
             const selectedMs = parseInt(e.target.dataset.time, 10);
             if (typeof Storage.setWarningMinutes === 'function') {
-                Storage.setWarningMinutes(selectedMs); // Zapisujemy gotowe milisekundy
+                Storage.setWarningMinutes(selectedMs);
             }
             updateWarningSettingsUI(); 
         });
@@ -207,6 +204,26 @@ export function initSettings() {
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
+                    if (!importedData || typeof importedData !== 'object') {
+                        throw new Error("Główny element pliku nie jest obiektem.");
+                    }
+                    if (!importedData.settings && !importedData.sessions) {
+                        throw new Error("Plik nie zawiera danych ustawień ani historii pracy (brak kluczy settings/sessions).");
+                    }
+                    if (importedData.sessions && !Array.isArray(importedData.sessions)) {
+                        throw new Error("Historia pracy (sessions) jest uszkodzona (nie jest tablicą).");
+                    }
+
+                    const isConfirmed = await showConfirm(
+                        'Import danych', 
+                        'Uwaga: Importowanie danych nadpisze Twoje obecne ustawienia i historię pracy.\n\nCzy na pewno chcesz kontynuować?'
+                    );
+
+                    if (!isConfirmed) {
+                        event.target.value = '';
+                        return;
+                    }
+                    
                     if (importedData.settings) {
                         Storage.setSettings(importedData.settings);
                     }
@@ -215,15 +232,24 @@ export function initSettings() {
                     }
                     
                     await showAlert('Sukces', 'Dane zostały pomyślnie zaimportowane!');
-                    // Odświeżenie strony, aby załadować nowe dane w trackerze i raportach
                     location.reload(); 
+                    
                 } catch (error) {
                     console.error("Błąd importu:", error);
-                    await showAlert('Błąd', 'Nieprawidłowy plik. Upewnij się, że to poprawny plik JSON wygenerowany przez tę aplikację.');
+                    await showAlert(
+                        'Błąd importu', 
+                        `Nie udało się wczytać pliku.\n\nPowód: ${error.message || 'Nieznany błąd formatu JSON.'}`
+                    );
                 }
                 
                 event.target.value = '';
             };
+            
+            reader.onerror = async () => {
+                await showAlert('Błąd', 'Nie udało się odczytać pliku z dysku urządzenia.');
+                event.target.value = '';
+            };
+            
             reader.readAsText(file);
         });
     }
