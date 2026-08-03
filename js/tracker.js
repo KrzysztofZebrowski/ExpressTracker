@@ -223,7 +223,7 @@ export function initTracker() {
             exportReminderCard.classList.remove('hidden');
         }
 
-        // Drzemka na 7 dni
+        // Przypomnij za 7 dni
         btnSnoozeExport.addEventListener('click', () => {
             exportReminderCard.classList.add('hidden');
             const snoozeTime = Date.now() - (23 * 24 * 60 * 60 * 1000);
@@ -237,7 +237,7 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'news-v1.3.4';
+        let messageName = 'news-v1.3.5';
         
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');

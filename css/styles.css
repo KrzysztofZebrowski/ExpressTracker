@@ -527,6 +527,31 @@ button {
 }
 
 /* =========================================
+   ANIMACJE RĘCZNE SPRAWDZANIE
+========================================= */
+@keyframes buttonPress {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.92); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.btn-clicked {
+    animation: buttonPress 0.2s ease-out forwards !important;
+}
+
+@keyframes titlePulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.26); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.title-pulsed {
+    animation: titlePulse 0.35s ease-out forwards !important;
+    display: inline-block;
+    transform-origin: left center;
+}
+
+/* =========================================
    10. ANIMACJE I NOWOCZESNY UX
 ========================================= */
 

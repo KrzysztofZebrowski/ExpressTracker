@@ -122,3 +122,56 @@ export function showConfirm(title, message) {
         btnCancel.addEventListener('click', handleCancel);
     });
 }
+
+export function showManualCheckModal(title, messageHtml, defaultValue = '') {
+    return new Promise((resolve) => {
+        const overlay = document.getElementById('manual-check-modal-overlay');
+        const modalBox = document.getElementById('manual-check-modal-box');
+        const titleEl = document.getElementById('manual-check-title');
+        const messageEl = document.getElementById('manual-check-message');
+        const inputEl = document.getElementById('manual-check-input');
+        const btnConfirm = document.getElementById('manual-check-btn-confirm');
+        const btnCancel = document.getElementById('manual-check-btn-cancel');
+
+        // 1. Ustawienie treści
+        titleEl.textContent = title;
+        messageEl.innerHTML = messageHtml;
+        inputEl.value = defaultValue;
+
+        // 2. Pokazujemy overlay bez animacji okna
+        overlay.classList.remove('hidden');
+        modalBox.style.animation = 'none'; 
+        
+        btnConfirm.classList.remove('btn-clicked');
+        titleEl.classList.remove('title-pulsed');
+
+        // Automatyczne ustawienie kursora
+        setTimeout(() => inputEl.focus(), 100);
+
+        // 3. Obsługa zatwierdzenia
+        const handleConfirm = () => {
+            btnConfirm.removeEventListener('click', handleConfirm);
+            btnCancel.removeEventListener('click', handleCancel);
+
+            btnConfirm.classList.add('btn-clicked');
+            titleEl.classList.add('title-pulsed');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                resolve(inputEl.value);
+            }, 200); 
+        };
+
+        // 4. Obsługa przerwania (anulowanie)
+        const handleCancel = () => {
+            btnConfirm.removeEventListener('click', handleConfirm);
+            btnCancel.removeEventListener('click', handleCancel);
+
+            overlay.classList.add('hidden');
+            resolve(null);
+        };
+
+        btnConfirm.addEventListener('click', handleConfirm);
+        btnCancel.addEventListener('click', handleCancel);
+    });
+}
