@@ -322,7 +322,7 @@ export function initExcel() {
 
             let rowsHtml = data.map((item, index) => {
                 const rowDiff = parseFloat(item.tabletEarned) - parseFloat(item.appEarned);
-                let statusHtml = '<span class="match-ok">OK</span>';
+                let statusHtml = '<span class="match-ok">Zgodne ✓</span>';
                 
                 if (Math.abs(rowDiff) >= 0.05) {
                     const sign = rowDiff > 0 ? '+' : '';
