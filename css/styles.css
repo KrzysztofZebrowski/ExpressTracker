@@ -583,10 +583,9 @@ button:active, .nav-item:active {
 }
 
 .rate-card, .tracker-box, .month-card, #whats-new-card, #export-reminder-card,
-.view .btn-blue, .view .btn-secondary, .view .btn-danger, .view #btn-toggle-work {
+.btn-blue, .btn-secondary, .btn-danger, #btn-toggle-work {
     animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0; 
-}
+    }
 
 /* Pulsujący stoper podczas pracy */
 @keyframes pulse-glow {
