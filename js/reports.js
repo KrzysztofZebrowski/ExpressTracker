@@ -51,20 +51,27 @@ export function renderReports() {
 
         const days = grouped[key].sort((a, b) => b.start - a.start);
 
-        // Sumowanie zarobków ze wszystkich dni w tym miesiącu
+        // Sumowanie zarobków i godzin ze wszystkich dni w tym miesiącu
         const monthTotal = days.reduce((sum, day) => {
             return sum + parseFloat(day.earned || 0);
         }, 0);
 
+        const monthHoursTotal = days.reduce((sum, day) => {
+            return sum + parseFloat(day.billableHours || 0);
+        }, 0);
+
         const monthCard = document.createElement('div');
         monthCard.className = 'month-card';
-
         const monthTitle = document.createElement('h2');
         monthTitle.className = 'month-title';
-
+        
+        // Wyświetlanie nazwy miesiąca oraz elastycznego kontenera z podsumowaniem kwoty i godzin
         monthTitle.innerHTML = `
             <span style="flex-grow: 1;">${monthName}</span>
-            <span style="color: #4CAF50; font-size: 16px; margin-right: 15px;">${monthTotal.toFixed(2)} zł</span>
+            <span style="display: flex; flex-direction: column; align-items: flex-end; margin-right: 15px; font-size: 14px; line-height: 1.2;">
+                <strong style="color: #4CAF50; font-size: 16px;">${monthTotal.toFixed(2)} zł</strong>
+                <span style="color: #64748b; font-weight: 600;">${monthHoursTotal} h</span>
+            </span>
         `;
 
         const monthDetails = document.createElement('div');
