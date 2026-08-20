@@ -25,6 +25,7 @@ export function renderReports() {
     }
 
     reportsContainer.innerHTML = ''; 
+    const fragment = document.createDocumentFragment();
     const sessions = Storage.getSessions();
 
     if (sessions.length === 0) {
@@ -114,8 +115,10 @@ export function renderReports() {
 
         monthCard.appendChild(monthTitle);
         monthCard.appendChild(monthDetails);
-        reportsContainer.appendChild(monthCard);
+        // reportsContainer.appendChild(monthCard);
+        fragment.appendChild(monthCard);
     });
+    reportsContainer.appendChild(fragment);
 }
 
 async function addNewSession() {
