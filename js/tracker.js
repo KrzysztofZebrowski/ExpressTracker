@@ -4,6 +4,7 @@ import { showPrompt, showAlert } from './modal.js';
 let intervalId = null;
 let startTime = null;
 let lastEarningsUpdate = 0;
+let cachedSettings = null;
 
 let btnToggle, timeDisplay, earningsDisplay, dateDisplay, startTimeDisplay, btnEditStart;
 
@@ -68,10 +69,10 @@ function calculateEarnings(ms, timestamp) {
     const dateObj = new Date(timestamp);
     
     if (dateObj.getDay() === 6) {
-        return parseFloat(settings.saturdayRate).toFixed(2);
+        return parseFloat(cachedSettings.saturdayRate).toFixed(2);
     } else {
         const billableHours = getBillableHours(ms);
-        return (billableHours * settings.hourlyRate).toFixed(2);
+        return (billableHours * cachedSettings.hourlyRate).toFixed(2);
     }
 }
 
@@ -194,6 +195,7 @@ function startWork() {
     document.querySelector('.tracker-box').classList.add('timer-running');
     
     intervalId = setInterval(updateUI, 1000);
+    cachedSettings = Storage.getSettings();
     updateUI();
 }
 
