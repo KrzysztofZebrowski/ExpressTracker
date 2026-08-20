@@ -1,5 +1,5 @@
 import { Storage } from './storage.js';
-import { showPrompt, showAlert, showConfirm } from './modal.js';
+import { showPrompt, showAlert, showConfirm, showManualCheckModal } from './modal.js';
 
 function getBillableHours(ms) {
     const totalSeconds = Math.floor(ms / 1000);
@@ -147,19 +147,35 @@ async function addNewSession() {
     const billableHours = getBillableHours(durationMs);
     
     const settings = Storage.getSettings();
-    const isSaturday = startDate.getDay() === 6;
     
-    // Jeśli sobota, daj stałą stawkę. Jak nie, mnóż z godzinami.
-    const earned = isSaturday 
-        ? parseFloat(settings.saturdayRate).toFixed(2) 
+    const isSaturday = startDate.getDay() === 6;
+    const defaultEarned = isSaturday
+        ? parseFloat(settings.saturdayRate).toFixed(2)
         : (billableHours * settings.hourlyRate).toFixed(2);
+
+    const customEarningsStr = await showManualCheckModal(
+        'Podsumowanie zarobku', 
+        'Automatycznie wyliczona kwota za ten wpis. Możesz ją edytować:', 
+        defaultEarned
+    );
+
+    if (customEarningsStr === null) return;
+
+    const cleanInput = String(customEarningsStr).replace(/[^\d.,]/g, '').replace(',', '.');
+    const finalEarnings = parseFloat(cleanInput);
+
+    if (isNaN(finalEarnings) || finalEarnings < 0) {
+        return await showAlert('Błąd', 'Podano nieprawidłową kwotę.');
+    }
+
+    const earned = finalEarnings.toFixed(2);
 
     Storage.addSession({
         start: startDate.getTime(),
         end: endDate.getTime(),
         durationMs,
         billableHours,
-        earned
+        earned: earned
     });
 
     renderReports();
@@ -222,8 +238,30 @@ async function editSession(index) {
 
     const durationMs = endDate.getTime() - startDate.getTime();
     const billableHours = getBillableHours(durationMs);
-    const { hourlyRate } = Storage.getSettings();
-    const earned = (billableHours * hourlyRate).toFixed(2);
+    
+    const settings = Storage.getSettings();
+    const isSaturday = startDate.getDay() === 6;
+    const defaultEarned = isSaturday
+        ? parseFloat(settings.saturdayRate).toFixed(2)
+        : (billableHours * settings.hourlyRate).toFixed(2);
+
+
+    const customEarningsStr = await showManualCheckModal(
+        'Podsumowanie zarobku', 
+        'Automatycznie wyliczona kwota po edycji. Możesz ją zmienić:', 
+        defaultEarned
+    );
+
+    if (customEarningsStr === null) return;
+
+    const cleanInput = String(customEarningsStr).replace(/[^\d.,]/g, '').replace(',', '.');
+    const finalEarnings = parseFloat(cleanInput);
+
+    if (isNaN(finalEarnings) || finalEarnings < 0) {
+        return await showAlert('Błąd', 'Podano nieprawidłową kwotę.');
+    }
+
+    const earned = finalEarnings.toFixed(2);
 
     sessions[index] = {
         ...session,
@@ -231,10 +269,10 @@ async function editSession(index) {
         end: endDate.getTime(),
         durationMs,
         billableHours,
-        earned
+        earned: earned
     };
-
     Storage.setSessions(sessions);
+
     renderReports();
     
     await showAlert(
