@@ -65,7 +65,10 @@ function getNextThresholdMs(elapsedMs) {
 }
 
 function calculateEarnings(ms, timestamp) {
-    const settings = Storage.getSettings();
+    if (!cachedSettings) {
+        cachedSettings = Storage.getSettings();
+    }
+    
     const dateObj = new Date(timestamp);
     
     if (dateObj.getDay() === 6) {
