@@ -12,12 +12,30 @@ export function initSettings() {
     const inputImport = document.getElementById('btn-import');
     const btnClearData = document.getElementById('btn-clear-data');
     const btnExportExcel = document.getElementById('btn-export-excel');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+    function applyTheme(isDark) {
+        document.documentElement.classList.toggle('dark-theme', isDark);
+        document.body.classList.toggle('dark-theme', isDark);
+    }
 
     // 2. Funkcja odświeżająca teksty ze stawkami na ekranie
     function updateDisplays() {
         const settings = Storage.getSettings();
         if (rateDisplay) rateDisplay.textContent = `${settings.hourlyRate} zł/h`;
         if (satRateDisplay) satRateDisplay.textContent = `${settings.saturdayRate} zł`;
+    }
+
+    const initialSettings = Storage.getSettings();
+    applyTheme(initialSettings.darkMode);
+    if (darkModeToggle) {
+        darkModeToggle.checked = initialSettings.darkMode;
+        darkModeToggle.addEventListener('change', () => {
+            const settings = Storage.getSettings();
+            settings.darkMode = darkModeToggle.checked;
+            Storage.setSettings(settings);
+            applyTheme(settings.darkMode);
+        });
     }
 
     updateDisplays();

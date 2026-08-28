@@ -12,7 +12,8 @@ export const Storage = {
         const parsed = data ? JSON.parse(data) : {};
         return {
             hourlyRate: parsed.hourlyRate || 34.0,
-            saturdayRate: parsed.saturdayRate !== undefined ? parsed.saturdayRate : 396.0 
+            saturdayRate: parsed.saturdayRate !== undefined ? parsed.saturdayRate : 396.0,
+            darkMode: parsed.darkMode === true
         };
     },
     setSettings: (settings) => { 

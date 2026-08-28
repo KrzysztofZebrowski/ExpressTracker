@@ -49,7 +49,7 @@ function getNextThresholdMs(elapsedMs) {
     const currentBillable = getBillableHours(elapsedMs);
     let checkSec = Math.floor(elapsedMs / 1000);
 
-    for (let i = 0; i < 48; i++) { // Pętla symulująca skoki co próg w przyszłość
+    for (let i = 0; i < 48; i++) {
         const h = Math.floor(checkSec / 3600);
         const rem = checkSec % 3600;
 
@@ -106,7 +106,7 @@ function updateUI() {
 
     if (thresholdWarning && thresholdCountdown) {
         if (isSaturday) {
-            // W sobotę progi nie obowiązują, na stałe chowamy baner
+            // W sobotę progi nie obowiązują - baner schowany
             thresholdWarning.classList.add('hidden');
         } else {
             const remainingMs = getNextThresholdMs(elapsed);
@@ -242,7 +242,7 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'news-v1.3.6';
+        let messageName = 'news-v1.3.7';
         
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');
