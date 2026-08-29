@@ -5,6 +5,34 @@ import { initSettings } from './settings.js';
 import { renderReports } from './reports.js';
 import { initExcel } from './excel.js';
 
+async function requestPersistentStorage() {
+    const badge = document.getElementById('backup-badge');
+
+    if (navigator.storage && navigator.storage.persist) {
+        const isPersisted = await navigator.storage.persist();
+
+        if (badge) {
+            badge.textContent = isPersisted ? 'Safe' : 'Lokalnie';
+            badge.classList.toggle('safe', isPersisted);
+        }
+
+        if (isPersisted) {
+            console.log("PWA: Dane zabezpieczone przed systemowym usunięciem.");
+        } else {
+            console.log("PWA: Brak zgody na trwały zapis.");
+        }
+
+        return isPersisted;
+    }
+
+    if (badge) {
+        badge.textContent = 'Lokalnie';
+        badge.classList.remove('safe');
+    }
+
+    return false;
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const navItems = document.querySelectorAll('.nav-item');
@@ -33,6 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTracker();
     initSettings();
     initExcel();
+    requestPersistentStorage();
 });
 
 /* =========================================

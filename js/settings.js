@@ -9,6 +9,8 @@ export function initSettings() {
     const btnChangeRate = document.getElementById('btn-change-rate');
     const btnChangeSatRate = document.getElementById('btn-change-sat-rate');
     const btnExport = document.getElementById('btn-export');
+    const btnBackupSave = document.getElementById('btn-backup-save');
+    const btnBackupRestore = document.getElementById('btn-backup-restore');
     const inputImport = document.getElementById('btn-import');
     const btnClearData = document.getElementById('btn-clear-data');
     const btnExportExcel = document.getElementById('btn-export-excel');
@@ -140,24 +142,45 @@ export function initSettings() {
 
     updateWarningSettingsUI();
 
+    if (btnBackupSave) {
+        btnBackupSave.addEventListener('click', async () => {
+            try {
+                await Storage.saveBackup();
+                await showAlert('Kopia zapasowa', 'Kopia zapasowa została zapisana na tym urządzeniu.');
+            } catch (error) {
+                console.error('Błąd zapisu backupu:', error);
+                await showAlert('Błąd', 'Nie udało się zapisać kopii zapasowej.');
+            }
+        });
+    }
+
+    if (btnBackupRestore) {
+        btnBackupRestore.addEventListener('click', async () => {
+            const isConfirmed = await showConfirm(
+                'Przywróć kopię zapasową',
+                'Czy na pewno chcesz przywrócić ostatnią zapisane kopię? To nadpisze obecne dane.'
+            );
+
+            if (!isConfirmed) {
+                return;
+            }
+
+            try {
+                await Storage.restoreLatestBackup();
+                await showAlert('Sukces', 'Ostatnia kopia zapasowa została przywrócona.');
+                location.reload();
+            } catch (error) {
+                console.error('Błąd przywracania backupu:', error);
+                await showAlert('Błąd', error.message || 'Nie znaleziono żadnej zapisanej kopii zapasowej.');
+            }
+        });
+    }
+
     // 5. Eksport danych do pliku JSON
     if (btnExport) {
         btnExport.addEventListener('click', () => {
-            const exportData = {
-                settings: Storage.getSettings(),
-                sessions: Storage.getSessions()
-            };
-            
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
+            Storage.exportBackupData();
 
-            downloadAnchorNode.setAttribute("download", `Express_Tracker_save_${new Date().toISOString().split('T')[0]}.json`);
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-
-            // Aktualizacja daty ostatniego eksportu
             if (typeof Storage.setLastExportDate === 'function') {
                 Storage.setLastExportDate();
                 document.getElementById('export-reminder-card')?.classList.add('hidden');
@@ -213,27 +236,28 @@ export function initSettings() {
 
     // 7. Import danych z pliku JSON
     if (inputImport) {
-        inputImport.addEventListener('change', (event) => {
+        inputImport.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
+
+            const isJsonFile =
+                file.name.toLowerCase().endsWith('.json') ||
+                file.type === 'application/json' ||
+                file.type === 'text/json' ||
+                file.type === 'application/ld+json';
+
+            if (!isJsonFile) {
+                await showAlert('Błąd importu', 'Wybierz poprawny plik JSON (.json).');
+                event.target.value = '';
+                return;
+            }
 
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    
-                    if (!importedData || typeof importedData !== 'object') {
-                        throw new Error("Główny element pliku nie jest obiektem.");
-                    }
-                    if (!importedData.settings && !importedData.sessions) {
-                        throw new Error("Plik nie zawiera danych ustawień ani historii pracy (brak kluczy settings/sessions).");
-                    }
-                    if (importedData.sessions && !Array.isArray(importedData.sessions)) {
-                        throw new Error("Historia pracy (sessions) jest uszkodzona (nie jest tablicą).");
-                    }
-
                     const isConfirmed = await showConfirm(
-                        'Import danych', 
+                        'Import danych',
                         'Uwaga: Importowanie danych nadpisze Twoje obecne ustawienia i historię pracy.\n\nCzy na pewno chcesz kontynuować?'
                     );
 
@@ -241,33 +265,26 @@ export function initSettings() {
                         event.target.value = '';
                         return;
                     }
-                    
-                    if (importedData.settings) {
-                        Storage.setSettings(importedData.settings);
-                    }
-                    if (importedData.sessions) {
-                        Storage.setSessions(importedData.sessions);
-                    }
-                    
+
+                    Storage.importBackupData(importedData);
                     await showAlert('Sukces', 'Dane zostały pomyślnie zaimportowane!');
-                    location.reload(); 
-                    
+                    location.reload();
                 } catch (error) {
-                    console.error("Błąd importu:", error);
+                    console.error('Błąd importu:', error);
                     await showAlert(
-                        'Błąd importu', 
+                        'Błąd importu',
                         `Nie udało się wczytać pliku.\n\nPowód: ${error.message || 'Nieznany błąd formatu JSON.'}`
                     );
                 }
-                
+
                 event.target.value = '';
             };
-            
+
             reader.onerror = async () => {
                 await showAlert('Błąd', 'Nie udało się odczytać pliku z dysku urządzenia.');
                 event.target.value = '';
             };
-            
+
             reader.readAsText(file);
         });
     }

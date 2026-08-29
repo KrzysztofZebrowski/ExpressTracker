@@ -87,14 +87,19 @@
             <!-- CO NOWEGO -->
             <div id="whats-new-card" class="rate-card hidden" style="margin-top: 25px; display: block; border-left: 4px solid var(--blue);">
                 <div style="font-weight: bold; margin-bottom: 10px; font-size: 16px;">
-                    Co nowego w apce?
+                    Co nowego w apce? <strong>DUŻO</strong>>
                 </div>
                 <ul style="font-size: 14px; color: #666; padding-left: 20px; line-height: 1.6; margin: 0;">
-                    <li><strong>Kieras dalej na urlopie:</strong> <br>Drineczki z palemkami</li>
                     <li><strong>Ciemny motyw:</strong> <br>Dodano nowy ciemny motyw aplikacji</li>
+                    <li><strong>Poprawki UI:</strong> <br>Ujednolicenie tabel w sekcji Rozliczenia</li>
+                    <li><strong>Poprawa importu:</strong> <br>Poprawiono obsługę importu plików JSON</li>
+                    <li><strong>Mechanizm kopii zapasowych:</strong> <br>Dodano mechanizm automatycznych kopii zapasowych danych</li>
+                    <li><strong>Bezpieczniejsze przechowywanie danych:</strong> 
+                        <br>Zabezpiecza przed skasowaniem przez przeglądarkę w sytuacji braku miejsca na urządzeniu.</li>
+                    
                 </ul>
 
-                <hr style="border: none; border-top: 1px solid #eee; margin: 15px 0 10px 0;">
+                <hr class="soft-divider">
                 <button id="btn-hide-whats-new" class="btn-blue bold" style="display: block; margin: 0 auto; min-width: 120px; padding: 10px 0; border: 1px solid var(--blue);">OK</button>
             </div>
         </section>
@@ -179,11 +184,31 @@
                 </div>
             </div>
             
-            <div class="action-buttons-row">                
-                <label for="btn-import" class="btn-blue">Importuj dane (JSON)</label>
-                <input type="file" id="btn-import" accept=".json" class="hidden-input">
+            <div class="rate-card backup-card">
+                <div class="backup-header">
+                    <div class="backup-header-main">
+                        <div class="backup-icon">💾</div>
+                        <div>
+                            <span>Kopie zapasowe</span>
+                            <strong>Bezpieczny backup</strong>
+                        </div>
+                    </div>
+                    <span id="backup-badge" class="backup-badge">Lokalnie</span>
+                </div>
 
-                <button id="btn-export" class="btn-blue">Eksportuj dane (JSON)</button>
+                <div class="backup-actions">
+                    <button id="btn-backup-save" class="btn-blue" type="button">Zapisz kopię</button>
+                    <button id="btn-backup-restore" class="btn-secondary" type="button">Przywróć ostatnią</button>
+                </div>
+
+                <div class="backup-divider" aria-hidden="true"></div>
+
+                <div class="backup-advanced">
+                    <label for="btn-import" class="btn-blue">Importuj z pliku JSON</label>
+                    <input type="file" id="btn-import" accept=".json,application/json,text/json" class="hidden-input">
+
+                    <button id="btn-export" class="btn-blue">Pobierz JSON</button>
+                </div>
             </div>
 
             <button id="btn-export-excel" class="btn-blue" style="width: 100%; background-color: #217346; padding: 15px; margin-bottom: 10px;">Eksportuj raporty do Excela</button>

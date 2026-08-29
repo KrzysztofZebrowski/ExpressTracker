@@ -86,38 +86,52 @@ export function initExcel() {
                         .filter(d => d.startsWith(targetYearMonth))
                         .sort(); 
 
-                    let html = `
-                        <div class="excel-month-header" style="background-color: #217346;">
-                            Rozliczenie: <b>${displayMonthName}</b>
-                        </div>
-                        <table class="comparison-table">
-                            <thead>
-                                <tr>
-                                    <th>Dzień</th>
-                                    <th>Excel</th>
-                                    <th>Aplikacja</th>
-                                    <th>Różnica</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-
                     let totalExcel = 0;
                     let totalApp = 0;
+
+                    filteredDates.forEach(date => {
+                        const exVal = excelDataByDate[date] || 0;
+                        const myVal = myDataByDate[date] || 0;
+                        totalExcel += exVal;
+                        totalApp += myVal;
+                    });
+
+                    const totalDiff = totalExcel - totalApp;
+
+                    let html = `
+                        <div class="month-card excel-result-card">
+                            <div class="excel-month-header">
+                                Rozliczenie: <b>${displayMonthName}</b>
+                            </div>
+
+                            <div class="comparison-summary">
+                                <div>Excel<br><span class="comparison-summary-value">${totalExcel.toFixed(2)}</span></div>
+                                <div>Aplikacja<br><span class="comparison-summary-value">${totalApp.toFixed(2)}</span></div>
+                                <div>Różnica<br><span class="comparison-summary-value ${totalDiff >= 0 ? 'match-ok' : 'match-diff'}">${totalDiff >= 0 ? '+' : ''}${totalDiff.toFixed(2)}</span></div>
+                            </div>
+
+                            <table class="comparison-table" style="box-shadow: none; border-radius: 0;">
+                                <thead>
+                                    <tr>
+                                        <th>Dzień</th>
+                                        <th>Excel</th>
+                                        <th>Aplikacja</th>
+                                        <th>Różnica</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
 
                     filteredDates.forEach(date => {
                         const dayNum = date.split('-')[2];
                         const exVal = excelDataByDate[date] || 0;
                         const myVal = myDataByDate[date] || 0;
-                        
-                        totalExcel += exVal;
-                        totalApp += myVal;
 
                         const diff = exVal - myVal;
                         let statusHtml = '';
 
                         if (Math.abs(diff) < 0.05) {
-                            statusHtml = '<span class="match-ok">Zgodne ✓</span>';
+                            statusHtml = '<span class="match-ok">✓</span>';
                         } else if (diff > 0) {
                             statusHtml = `<span class="match-ok">+${diff.toFixed(2)} zł</span>`;
                         } else {
@@ -134,23 +148,10 @@ export function initExcel() {
                         `;
                     });
 
-                    const totalDiff = totalExcel - totalApp;
-                    let totalStatusHtml = Math.abs(totalDiff) < 0.05 
-                        ? '<span class="match-ok">Wszystko się zgadza!</span>' 
-                        : (totalDiff > 0 ? `<span class="match-ok">Jesteś na plus: +${totalDiff.toFixed(2)} zł</span>` 
-                                         : `<span class="match-diff">Brakuje: ${totalDiff.toFixed(2)} zł</span>`);
-
                     html += `
                             </tbody>
-                            <tfoot>
-                                <tr style="background: #f0f0f0; font-weight: bold;">
-                                    <td>SUMA</td>
-                                    <td>${totalExcel.toFixed(2)}</td>
-                                    <td>${totalApp.toFixed(2)}</td>
-                                    <td>${totalStatusHtml}</td>
-                                </tr>
-                            </tfoot>
                         </table>
+                        </div>
                     `;
 
                     resultsContainer.innerHTML = html;
@@ -322,7 +323,7 @@ export function initExcel() {
 
             let rowsHtml = data.map((item, index) => {
                 const rowDiff = parseFloat(item.tabletEarned) - parseFloat(item.appEarned);
-                let statusHtml = '<span class="match-ok">Zgodne ✓</span>';
+                let statusHtml = '<span class="match-ok">✓</span>';
                 
                 if (Math.abs(rowDiff) >= 0.05) {
                     const sign = rowDiff > 0 ? '+' : '';
@@ -334,9 +335,11 @@ export function initExcel() {
                 <tr>
                     <td style="font-weight: bold;">${item.dateStr.split('.').slice(0, 2).join('.')}</td>
                     <td>${item.appEarned}</td>
-                    <td style="display: flex; justify-content: center; align-items: center; gap: 5px;">
-                        <span>${item.tabletEarned}</span>
-                        <button class="btn-edit-tablet" data-month="${month}" data-index="${index}" style="background: none; border: none; padding: 2px; cursor: pointer; font-size: 14px;">✏️</button>
+                    <td class="tablet-cell">
+                        <div class="tablet-cell-content">
+                            <span>${item.tabletEarned}</span>
+                            <button class="btn-edit-tablet" data-month="${month}" data-index="${index}" style="background: none; border: none; padding: 2px; cursor: pointer; font-size: 14px;">✏️</button>
+                        </div>
                     </td>
                     <td>${statusHtml}</td>
                 </tr>
@@ -345,7 +348,7 @@ export function initExcel() {
 
             html += `
             <div class="month-card" style="margin-top: 25px; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; background: white;">
-                <div class="excel-month-header" style="margin-bottom: 0; border-radius: 0; background-color: var(--blue);">
+                <div class="manual-check-header">
                     Ręczne sprawdzenie: <b>${capMonthName}</b>
                 </div>
                 
