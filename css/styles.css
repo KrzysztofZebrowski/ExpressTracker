@@ -832,7 +832,7 @@ body.dark-theme .comparison-summary {
     color: var(--text) !important;
 }
 
-body.dark-theme .comparison-summary-value {
+body.dark-theme .comparison-summary-value:not(.match-ok):not(.match-diff) {
     color: var(--text) !important;
 }
 
