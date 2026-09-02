@@ -25,8 +25,7 @@
         }
     </script>
     <link rel="stylesheet" href="css/styles.css">
-    <!-- <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-</head> -->
+</head>
     
 <body>
 
@@ -34,8 +33,10 @@
     <main id="app-content">
         <!-- WIDOK 1: REJESTRACJA CZASU -->
         <section id="view-tracker" class="view active">
-            <h1>Express Tracker</h1>
-            <br>
+            <div class="header-with-badge">
+                <h1>Express Tracker</h1>
+                <span id="network-badge" class="badge"></span>
+            </div><br>
             
             <div class="tracker-box">
                 <div class="session-info">
@@ -91,12 +92,8 @@
                     Co nowego w apce? <strong>DUŻO</strong>
                 </div>
                 <ul style="font-size: 14px; color: #666; padding-left: 20px; line-height: 1.6; margin: 0;">
-                    <li><strong>Ciemny motyw:</strong> <br>Dodano nowy ciemny motyw aplikacji</li>
-                    <li><strong>Poprawki UI:</strong> <br>Ujednolicenie tabel w sekcji Rozliczenia</li>
-                    <li><strong>Poprawa importu:</strong> <br>Poprawiono obsługę importu plików JSON</li>
-                    <li><strong>Mechanizm kopii zapasowych:</strong> <br>Dodano mechanizm automatycznych kopii zapasowych danych</li>
-                    <li><strong>Bezpieczniejsze przechowywanie danych:</strong> 
-                        <br>Zabezpiecza przed skasowaniem przez przeglądarkę w sytuacji braku miejsca na urządzeniu.</li>
+                    <li><strong>Plakietka ze statusem apki:</strong> <br>Status połączenia z internetem</li>
+                    <li><strong>Optymalizacja apki</strong> <br>Przyspieszono proces uruchamiania aplikacji</li>
                     
                 </ul>
 

@@ -242,7 +242,7 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'news-v1.4.0';
+        let messageName = 'news-v1.4.1';
         
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');

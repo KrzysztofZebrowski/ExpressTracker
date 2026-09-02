@@ -945,3 +945,36 @@ button:active, .nav-item:active {
 .view.active button {
     animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* =========================================
+   NAGŁÓWKI Z BADGE (ONLINE/OFFLINE)
+========================================= */
+.header-with-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.header-with-badge h1 {
+    margin: 0;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.badge.online {
+    background-color: #d1fae5;
+    color: #059669;
+}
+
+.badge.offline {
+    background-color: #fee2e2;
+    color: #dc2626;
+}

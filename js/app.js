@@ -5,6 +5,28 @@ import { initSettings } from './settings.js';
 import { renderReports } from './reports.js';
 import { initExcel } from './excel.js';
 
+// Pobieranie elementu badge'a, aby modyfikować jego tekst i klasy.
+    const networkBadge = document.getElementById('network-badge');
+    
+    function updateNetworkStatus() {
+        if (!networkBadge) return;
+        
+        if (navigator.onLine) {
+            networkBadge.textContent = 'Online';
+            networkBadge.classList.remove('offline');
+            networkBadge.classList.add('online');
+        } else {
+            networkBadge.textContent = 'Offline';
+            networkBadge.classList.remove('online');
+            networkBadge.classList.add('offline');
+        }
+    }
+
+    updateNetworkStatus();
+
+    window.addEventListener('online', updateNetworkStatus);
+    window.addEventListener('offline', updateNetworkStatus);
+
 async function requestPersistentStorage() {
     const badge = document.getElementById('backup-badge');
 

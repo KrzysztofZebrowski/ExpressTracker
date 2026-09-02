@@ -1,4 +1,6 @@
-const CACHE_NAME = 'expresstracker-v1.4.0'; 
+const VERSION = '1.4.1';
+
+const CACHE_NAME = `expresstracker-v${VERSION}`; 
 
 const ASSETS_TO_CACHE = [
     './index.html',
