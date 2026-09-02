@@ -1,6 +1,24 @@
 import { Storage } from './storage.js';
 import { showPrompt, showConfirm, showAlert, showManualCheckModal } from './modal.js';
 
+// Funkcja asynchronicznie pobierająca bibliotekę Excela
+function loadExcelLibrary() {
+    
+    return new Promise((resolve, reject) => {
+        // Sprawdzenie czy biblioteka jest już załadowana
+        if (window.XLSX) {
+            return resolve(true);
+        }
+        
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => reject(new Error('Nie udało się pobrać biblioteki Excel. Sprawdź połączenie z internetem.'));
+        
+        document.head.appendChild(script);
+    });
+}
+
 export function initExcel() {
     const fileInput = document.getElementById('excel-upload');
     const resultsContainer = document.getElementById('excel-results');
@@ -16,10 +34,19 @@ export function initExcel() {
     // 1. OBSŁUGA PLIKU EXCEL (.XLSX)
     // ==========================================
     if (fileInput && resultsContainer) {
-        fileInput.addEventListener('change', (event) => {
+        fileInput.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (!file) return;
 
+            // Pobieranie biblioteki Excel
+            try {
+                await loadExcelLibrary();
+            } catch (err) {
+                showAlert('Błąd', err.message);
+                event.target.value = '';
+                return;
+            }
+            
             const reader = new FileReader();
             
             reader.onload = (e) => {

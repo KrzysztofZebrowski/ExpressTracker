@@ -198,6 +198,17 @@ export function initSettings() {
                     return await showAlert('Brak danych', 'Nie masz żadnych zapisanych raportów do wyeksportowania.');
                 }
 
+                // Pobieranie biblioteki Excel
+                if (!window.XLSX) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js';
+                        script.onload = () => resolve();
+                        script.onerror = () => reject(new Error('Nie udało się pobrać biblioteki Excel. Sprawdź połączenie z internetem.'));
+                        document.head.appendChild(script);
+                    });
+                }
+
                 // Przygotowanie danych do Excela
                 sessions.sort((a, b) => new Date(b.start) - new Date(a.start));
 
