@@ -970,11 +970,11 @@ button:active, .nav-item:active {
 }
 
 .badge.online {
-    background-color: #d1fae5;
-    color: #059669;
+    background-color: #059669;
+    color: #ffffff;
 }
 
 .badge.offline {
-    background-color: #fee2e2;
-    color: #dc2626;
+    background-color: var(--danger);
+    color: #ffffff;
 }
