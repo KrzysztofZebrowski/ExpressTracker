@@ -845,6 +845,18 @@ body.dark-theme #export-reminder-card {
     background-color: #172b3d !important;
 }
 
+body.dark-theme #threshold-warning {
+    background-color: #1e293b;
+    color: #e0f2fe;
+    border-color: #0ea5e9;
+}
+
+body.dark-theme #threshold-warning.urgent {
+    background-color: #1e293b;
+    color: #fef3c7;
+    border-color: #f59e0b;
+}
+
 body.dark-theme #export-reminder-card strong {
     color: #7dd3fc !important;
 }
