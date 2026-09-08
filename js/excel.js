@@ -365,7 +365,7 @@ export function initExcel() {
                     <td class="tablet-cell">
                         <div class="tablet-cell-content">
                             <span>${item.tabletEarned}</span>
-                            <button class="btn-edit-tablet" data-month="${month}" data-index="${index}" style="background: none; border: none; padding: 2px; cursor: pointer; font-size: 14px;">✏️</button>
+                            <button class="btn-edit-tablet" aria-label="Edytuj kwotę" data-month="${month}" data-index="${index}" style="background: none; border: none; padding: 2px; cursor: pointer; font-size: 14px;">✏️</button>
                         </div>
                     </td>
                     <td>${statusHtml}</td>

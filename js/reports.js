@@ -93,8 +93,8 @@ export function renderReports() {
                 <div class="day-time">${startStr} - ${endStr}</div>
                 <div class="day-stats">${day.earned} zł <br> ${day.billableHours} h</div>
                 <div class="day-actions">
-                    <button class="btn-edit" data-index="${day.originalIndex}">✏️</button>
-                    <button class="btn-delete" data-index="${day.originalIndex}">🗑️</button>
+                    <button class="btn-edit" aria-label="Edytuj" data-index="${day.originalIndex}">✏️</button>
+                    <button class="btn-delete" aria-label="Usuń" data-index="${day.originalIndex}">🗑️</button>
                 </div>
             `;
             monthDetails.appendChild(row);
