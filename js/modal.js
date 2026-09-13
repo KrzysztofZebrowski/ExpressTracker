@@ -9,8 +9,17 @@ export function showAlert(title, message, buttonText = 'Zatwierdź') {
         const btnCancel = document.getElementById('modal-btn-cancel');
 
         // 1. Ustawienie treści
-        titleEl.innerHTML = title;
-        messageEl.innerHTML = message;
+        titleEl.textContent = title;
+
+        messageEl.textContent = '';
+        if (typeof message === 'string') {
+            messageEl.textContent = message;
+            messageEl.style.whiteSpace = 'pre-wrap';
+        } else if (message instanceof Node) {
+            messageEl.appendChild(message);
+            messageEl.style.whiteSpace = 'normal';
+        }
+
         btnConfirm.textContent = buttonText;
 
         // 2. Widoczność elementów
@@ -94,7 +103,16 @@ export function showConfirm(title, message) {
 
         // 1. Ustawienie treści
         titleEl.textContent = title;
-        messageEl.innerHTML = message;
+
+        messageEl.textContent = '';
+        if (typeof message === 'string') {
+            messageEl.textContent = message;
+            messageEl.style.whiteSpace = 'pre-wrap';
+        } else if (message instanceof Node) {
+            messageEl.appendChild(message);
+            messageEl.style.whiteSpace = 'normal';
+        }
+
         btnConfirm.textContent = 'Zatwierdź';
         btnCancel.textContent = 'Anuluj';
 
@@ -140,7 +158,16 @@ export function showManualCheckModal(title, messageHtml, defaultValue = '') {
 
         // 1. Ustawienie treści
         titleEl.textContent = title;
-        messageEl.innerHTML = messageHtml;
+
+        messageEl.textContent = '';
+        if (typeof messageHtml === 'string') {
+            messageEl.textContent = messageHtml;
+            messageEl.style.whiteSpace = 'pre-wrap';
+        } else if (messageHtml instanceof Node) {
+            messageEl.appendChild(messageHtml);
+            messageEl.style.whiteSpace = 'normal';
+        }
+
         inputEl.value = defaultValue;
 
         // 2. Pokazujemy overlay bez animacji okna

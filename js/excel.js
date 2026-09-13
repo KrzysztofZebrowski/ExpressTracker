@@ -232,9 +232,16 @@ export function initExcel() {
                 const dateStr = dateObj.toLocaleDateString('pl-PL');
                 const appEarned = parseFloat(session.earned || 0).toFixed(2);
                 
+                const msgDiv = document.createElement('div');
+                msgDiv.appendChild(document.createTextNode('Data: '));
+                const bDate = document.createElement('b');
+                bDate.textContent = dateStr;
+                msgDiv.appendChild(bDate);
+                msgDiv.appendChild(document.createElement('br'));
+                msgDiv.appendChild(document.createTextNode('Podaj kwotę wpisaną na tablecie (zł):'));
                 const tabletEarnedStr = await showManualCheckModal(
                     `Dzień ${i + 1} z ${monthSessions.length}`,
-                    `Data: <b>${dateStr}</b><br>Podaj kwotę wpisaną na tablecie (zł):`,
+                    msgDiv,
                     appEarned
                 );
 

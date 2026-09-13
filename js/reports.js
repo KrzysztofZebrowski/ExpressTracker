@@ -187,12 +187,21 @@ async function addNewSession() {
     });
 
     renderReports();
-    await showAlert(
-        'Dodano wpis', 
-        `Pomyślnie dodano nowy dzień pracy!<br><br>` +
-        `Zaliczone godziny: <b>${billableHours}h</b><br>` +
-        `Zarobek: <b style="color: #4CAF50;">${earned} zł</b>`
-    );
+    const msgDiv = document.createElement('div');
+        msgDiv.appendChild(document.createTextNode('Pomyślnie dodano nowy dzień pracy!'));
+    msgDiv.appendChild(document.createElement('br'));
+    msgDiv.appendChild(document.createElement('br'));
+    msgDiv.appendChild(document.createTextNode('Zaliczone godziny: '));
+    const b1 = document.createElement('b');
+    b1.textContent = `${billableHours}h`;
+    msgDiv.appendChild(b1);
+    msgDiv.appendChild(document.createElement('br'));
+    msgDiv.appendChild(document.createTextNode('Zarobek: '));
+    const b2 = document.createElement('b');
+    b2.style.color = '#4CAF50';
+    b2.textContent = `${earned} zł`;
+    msgDiv.appendChild(b2);
+    await showAlert('Dodano wpis', msgDiv);
 }
 
 async function deleteSession(index) {
@@ -283,9 +292,16 @@ async function editSession(index) {
 
     renderReports();
     
-    await showAlert(
-        'Zaktualizowano', 
-        `Nowy czas: <b>${billableHours}h</b><br>` +
-        `Nowe wynagrodzenie: <b style="color: #4CAF50;">${earned} zł</b>`
-    );
+    const msgDiv = document.createElement('div');
+    msgDiv.appendChild(document.createTextNode('Nowy czas: '));
+    const b1 = document.createElement('b');
+    b1.textContent = `${billableHours}h`;
+    msgDiv.appendChild(b1);
+    msgDiv.appendChild(document.createElement('br'));
+    msgDiv.appendChild(document.createTextNode('Nowe wynagrodzenie: '));
+    const b2 = document.createElement('b');
+    b2.style.color = '#4CAF50';
+    b2.textContent = `${earned} zł`;
+    msgDiv.appendChild(b2);
+    await showAlert('Zaktualizowano', msgDiv);
 }

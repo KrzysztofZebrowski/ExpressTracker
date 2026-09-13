@@ -199,15 +199,34 @@ async function stopWork() {
         if (actualRate > baseRate) color = '#4CAF50';
         else if (actualRate < baseRate) color = '#F44336';
 
-        const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div style="font-size: 32px; font-weight: bold; color: ${color}; text-align: center;">${actualRate.toFixed(2)} zł/h</div>`;
-
-        await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
+        const msgDiv1 = document.createElement('div');
+        msgDiv1.appendChild(document.createTextNode('Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:'));
+        msgDiv1.appendChild(document.createElement('br'));
+        msgDiv1.appendChild(document.createElement('br'));
+        const rateDiv = document.createElement('div');
+        rateDiv.style.fontSize = '32px';
+        rateDiv.style.fontWeight = 'bold';
+        rateDiv.style.color = color;
+        rateDiv.style.textAlign = 'center';
+        rateDiv.textContent = `${actualRate.toFixed(2)} zł/h`;
+        msgDiv1.appendChild(rateDiv);
+        await showAlert('Rzeczywista stawka', msgDiv1, 'Dalej');
     }
 
-    await showAlert(
-        'Trasa zakończona',
-        `Zaliczone godziny: <b>${billableTime}h</b><br><br>Zarobek: <b style="font-size: 20px; color: #4CAF50;">${finalEarnings} zł</b>`
-    );
+    const msgDiv2 = document.createElement('div');
+    msgDiv2.appendChild(document.createTextNode('Zaliczone godziny: '));
+    const b1 = document.createElement('b');
+    b1.textContent = `${billableTime}h`;
+    msgDiv2.appendChild(b1);
+    msgDiv2.appendChild(document.createElement('br'));
+    msgDiv2.appendChild(document.createElement('br'));
+    msgDiv2.appendChild(document.createTextNode('Zarobek: '));
+    const b2 = document.createElement('b');
+    b2.style.fontSize = '20px';
+    b2.style.color = '#4CAF50';
+    b2.textContent = `${finalEarnings} zł`;
+    msgDiv2.appendChild(b2);
+    await showAlert('Trasa zakończona', msgDiv2);
 }
 
 function startWork() {
