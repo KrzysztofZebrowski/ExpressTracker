@@ -33,12 +33,17 @@ function getBillableHours(ms) {
     const totalSeconds = Math.floor(ms / 1000);
     const fullHours = Math.floor(totalSeconds / 3600);
     const remainingSeconds = totalSeconds % 3600;
+    const isSaturday = new Date(startTime).getDay() === 6;
 
     let extraHours = 0;
     if (remainingSeconds >= 2700) { extraHours = 1; }
     else if (remainingSeconds >= 900) { extraHours = 0.5; }
 
     const calculatedHours = fullHours + extraHours;
+
+    if (isSaturday) {
+        return calculatedHours;
+    }
 
     // ZAWSZE MINIMUM 8 GODZIN
     return Math.max(8, calculatedHours);
@@ -262,7 +267,7 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'news-v1.4.1';
+        let messageName = 'news-v1.4.2';
 
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');
