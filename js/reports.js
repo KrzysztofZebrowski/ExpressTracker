@@ -1,7 +1,7 @@
 import { Storage } from './storage.js';
 import { showPrompt, showAlert, showConfirm, showManualCheckModal } from './modal.js';
 
-function getBillableHours(ms) {
+function getBillableHours(ms, isSaturday = false) {
     const totalSeconds = Math.floor(ms / 1000);
     const fullHours = Math.floor(totalSeconds / 3600);
     const remainingSeconds = totalSeconds % 3600;
@@ -11,6 +11,11 @@ function getBillableHours(ms) {
     else if (remainingSeconds >= 900) { extraHours = 0.5; }
     
     const calculatedHours = fullHours + extraHours;
+
+    if (isSaturday) {
+        return calculatedHours;
+    };
+
     return Math.max(8, calculatedHours); // Minimum 8 godzin
 }
 
@@ -147,7 +152,7 @@ async function addNewSession() {
     }
 
     const durationMs = endDate.getTime() - startDate.getTime();
-    const billableHours = getBillableHours(durationMs);
+    const billableHours = getBillableHours(durationMs, startDate.getDay() === 6);
     
     const settings = Storage.getSettings();
     

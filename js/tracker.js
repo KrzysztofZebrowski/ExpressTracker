@@ -24,7 +24,7 @@ function formatCountdown(ms) {
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
     const s = totalSec % 60;
-    
+
     if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`;
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
@@ -33,13 +33,18 @@ function getBillableHours(ms) {
     const totalSeconds = Math.floor(ms / 1000);
     const fullHours = Math.floor(totalSeconds / 3600);
     const remainingSeconds = totalSeconds % 3600;
+    const isSaturday = new Date(startTime).getDay() === 6;
 
     let extraHours = 0;
-    if (remainingSeconds >= 2700) { extraHours = 1; } 
+    if (remainingSeconds >= 2700) { extraHours = 1; }
     else if (remainingSeconds >= 900) { extraHours = 0.5; }
 
     const calculatedHours = fullHours + extraHours;
-    
+
+    if (isSaturday) {
+        return calculatedHours;
+    }
+
     // ZAWSZE MINIMUM 8 GODZIN
     return Math.max(8, calculatedHours);
 }
@@ -68,9 +73,9 @@ function calculateEarnings(ms, timestamp) {
     if (!cachedSettings) {
         cachedSettings = Storage.getSettings();
     }
-    
+
     const dateObj = new Date(timestamp);
-    
+
     if (dateObj.getDay() === 6) {
         return parseFloat(cachedSettings.saturdayRate).toFixed(2);
     } else {
@@ -90,7 +95,7 @@ function updateSessionInfo(timestamp) {
     const dateObj = new Date(timestamp);
     dateDisplay.textContent = `Data: ${dateObj.toLocaleDateString('pl-PL')}`;
     startTimeDisplay.textContent = `Rozpoczęto: ${dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}`;
-    
+
     // Przycisk edycji czasu rozpoczęcia jest widoczny tylko podczas aktywnej sesji
     if (btnEditStart) btnEditStart.classList.remove('hidden');
 }
@@ -110,7 +115,7 @@ function updateUI() {
             thresholdWarning.classList.add('hidden');
         } else {
             const remainingMs = getNextThresholdMs(elapsed);
-            
+
             // --- POBIERANIE BEZPOŚREDNIO W MILISEKUNDACH ---
             let warningThresholdMs = 300000; // Domyślnie 5 min
             if (typeof Storage.getWarningMinutes === 'function') {
@@ -137,15 +142,15 @@ function updateUI() {
 async function stopWork() {
     clearInterval(intervalId);
     intervalId = null;
-    
+
     let endObj = new Date();
     const startObj = new Date(startTime);
 
     // OGRANICZENIE DO 23:59
-    if (endObj.getDate() !== startObj.getDate() || 
-        endObj.getMonth() !== startObj.getMonth() || 
+    if (endObj.getDate() !== startObj.getDate() ||
+        endObj.getMonth() !== startObj.getMonth() ||
         endObj.getFullYear() !== startObj.getFullYear()) {
-        
+
         // Czas ucina się na 23:59:59 tego samego dnia, w którym rozpoczęto pracę
         endObj = new Date(startObj);
         endObj.setHours(23, 59, 0, 0);
@@ -154,7 +159,7 @@ async function stopWork() {
 
     const endTime = endObj.getTime();
     const elapsed = endTime - startTime;
-    
+
     const finalEarnings = calculateEarnings(elapsed, startTime);
     const billableTime = getBillableHours(elapsed);
 
@@ -169,7 +174,7 @@ async function stopWork() {
     Storage.clearActiveSession();
     startTime = null;
     lastEarningsUpdate = 0;
-    
+
     btnToggle.textContent = 'Rozpocznij pracę';
     btnToggle.classList.remove('active-btn');
 
@@ -178,9 +183,29 @@ async function stopWork() {
     timeDisplay.textContent = '00:00:00';
     earningsDisplay.textContent = 'Zarobek: 0.00 zł';
     updateSessionInfo(null);
-    
+
+    const isSaturday = startObj.getDay() === 6;
+    if (isSaturday) {
+        const settings = Storage.getSettings();
+        const baseRate = parseFloat(settings.hourlyRate);
+        const actualHours = elapsed / 3600000;
+        let actualRate = 0;
+
+        if (actualHours > 0) {
+            actualRate = parseFloat(finalEarnings) / actualHours;
+        }
+
+        let color = 'var(--text)';
+        if (actualRate > baseRate) color = '#4CAF50';
+        else if (actualRate < baseRate) color = '#F44336';
+
+        const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div style="font-size: 32px; font-weight: bold; color: ${color}; text-align: center;">${actualRate.toFixed(2)} zł/h</div>`;
+
+        await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
+    }
+
     await showAlert(
-        'Trasa zakończona', 
+        'Trasa zakończona',
         `Zaliczone godziny: <b>${billableTime}h</b><br><br>Zarobek: <b style="font-size: 20px; color: #4CAF50;">${finalEarnings} zł</b>`
     );
 }
@@ -189,14 +214,14 @@ function startWork() {
     startTime = Date.now();
     lastEarningsUpdate = 0;
     Storage.setActiveSession(startTime);
-    
+
     updateSessionInfo(startTime);
-    
+
     btnToggle.textContent = 'Zakończ pracę';
     btnToggle.classList.add('active-btn');
 
     document.querySelector('.tracker-box').classList.add('timer-running');
-    
+
     intervalId = setInterval(updateUI, 1000);
     cachedSettings = Storage.getSettings();
     updateUI();
@@ -242,14 +267,14 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'news-v1.4.1';
-        
+        let messageName = 'news-v1.4.2';
+
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');
         }
 
         btnHideWhatsNew.addEventListener('click', () => {
-            whatsNewCard.classList.add('hidden'); 
+            whatsNewCard.classList.add('hidden');
             localStorage.setItem(messageName, 'true');
         });
     }
@@ -257,7 +282,7 @@ export function initTracker() {
     if (!btnToggle) return;
 
     btnToggle.addEventListener('click', async () => {
-        if (intervalId) { await stopWork(); } 
+        if (intervalId) { await stopWork(); }
         else { startWork(); }
     });
 
@@ -265,11 +290,11 @@ export function initTracker() {
     if (btnEditStart) {
         btnEditStart.addEventListener('click', async () => {
             if (!startTime) return;
-            
+
             const currentStartStr = new Date(startTime).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
-            
+
             const newStartStr = await showPrompt('Zmień godzinę rozpoczęcia pracy', currentStartStr, 'time');
-            
+
             if (newStartStr === null) return;
 
             const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
@@ -288,7 +313,7 @@ export function initTracker() {
             startTime = newDate.getTime();
             Storage.setActiveSession(startTime);
             updateSessionInfo(startTime);
-            
+
             updateUI();
         });
     }
