@@ -1,5 +1,5 @@
 // Otwiera proste okienko informacyjne (tylko przycisk Zatwierdź)
-export function showAlert(title, message) {
+export function showAlert(title, message, buttonText = 'Zatwierdź') {
     return new Promise((resolve) => {
         const overlay = document.getElementById('custom-modal-overlay');
         const titleEl = document.getElementById('modal-title');
@@ -11,6 +11,7 @@ export function showAlert(title, message) {
         // 1. Ustawienie treści
         titleEl.innerHTML = title;
         messageEl.innerHTML = message;
+        btnConfirm.textContent = buttonText;
 
         // 2. Widoczność elementów
         messageEl.classList.remove('hidden');
@@ -45,6 +46,8 @@ export function showPrompt(title, defaultValue = '', inputType = 'text') {
         titleEl.textContent = title;
         inputEl.type = inputType;
         inputEl.value = defaultValue;
+        btnConfirm.textContent = 'Zatwierdź';
+        btnCancel.textContent = 'Anuluj';
 
         // 2. Widoczność elementów 
         messageEl.classList.add('hidden');
@@ -92,6 +95,8 @@ export function showConfirm(title, message) {
         // 1. Ustawienie treści
         titleEl.textContent = title;
         messageEl.innerHTML = message;
+        btnConfirm.textContent = 'Zatwierdź';
+        btnCancel.textContent = 'Anuluj';
 
         // 2. Widoczność elementów
         messageEl.classList.remove('hidden');
