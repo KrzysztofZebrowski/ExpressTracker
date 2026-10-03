@@ -191,17 +191,17 @@ async function stopWork() {
         const actualHours = elapsed / 3600000;
         let actualRate = 0;
 
-        if (actualHours > 0) {
+        if (actualHours > 1) {
             actualRate = parseFloat(finalEarnings) / actualHours;
+
+            let color = 'var(--text)';
+            if (actualRate > baseRate) color = '#4CAF50';
+            else if (actualRate < baseRate) color = '#F44336';
+    
+            const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div style="font-size: 32px; font-weight: bold; color: ${color}; text-align: center;">${actualRate.toFixed(2)} zł/h</div>`;
+    
+            await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
         }
-
-        let color = 'var(--text)';
-        if (actualRate > baseRate) color = '#4CAF50';
-        else if (actualRate < baseRate) color = '#F44336';
-
-        const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div style="font-size: 32px; font-weight: bold; color: ${color}; text-align: center;">${actualRate.toFixed(2)} zł/h</div>`;
-
-        await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
     }
 
     await showAlert(
