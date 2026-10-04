@@ -4,6 +4,7 @@ import { initTracker } from './tracker.js';
 import { initSettings } from './settings.js';
 import { renderReports } from './reports.js';
 import { initExcel } from './excel.js';
+import { showAlert } from './modal.js';
 
 // Pobieranie elementu badge'a, aby modyfikować jego tekst i klasy.
     const networkBadge = document.getElementById('network-badge');
@@ -34,7 +35,7 @@ async function requestPersistentStorage() {
         const isPersisted = await navigator.storage.persist();
 
         if (badge) {
-            badge.innerHTML = isPersisted ? '<i class="bi bi-shield-check me-1"></i> Safe' : '<i class="bi bi-hdd me-1"></i> Lokalnie';
+            badge.innerHTML = isPersisted ? '<i class="bi bi-shield-check"></i><span>Safe</span>' : '<i class="bi bi-hdd-fill"></i><span>Lokalnie</span>';
             badge.classList.toggle('safe', isPersisted);
         }
 
@@ -48,7 +49,7 @@ async function requestPersistentStorage() {
     }
 
     if (badge) {
-        badge.innerHTML = '<i class="bi bi-hdd me-1"></i> Lokalnie';
+        badge.innerHTML = '<i class="bi bi-hdd-fill"></i><span>Lokalnie</span>';
         badge.classList.remove('safe');
     }
 
@@ -151,26 +152,76 @@ let deferredPrompt;
 const installCard = document.getElementById('install-pwa-card');
 const btnInstall = document.getElementById('btn-install-pwa');
 const btnClose = document.getElementById('btn-close-pwa');
+const btnSettingsInstall = document.getElementById('btn-settings-install-pwa');
+
+// Wykrywanie iOS (iPhone / iPad) oraz trybu Standalone
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+function isAppInstalled() {
+    return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+}
+
+function updateInstallPromptsVisibility() {
+    const installed = isAppInstalled();
+
+    if (installed) {
+        if (btnSettingsInstall) {
+            btnSettingsInstall.classList.add('hidden');
+            btnSettingsInstall.style.display = 'none';
+        }
+        if (installCard) {
+            installCard.classList.add('hidden');
+            installCard.style.display = 'none';
+        }
+        return;
+    }
+
+    // Jeśli aplikacja NIE jest zainstalowana, przycisk w Opcjach jest widoczny
+    if (btnSettingsInstall) {
+        btnSettingsInstall.classList.remove('hidden');
+        btnSettingsInstall.style.display = 'flex';
+
+        if (isIOS) {
+            const title = document.getElementById('settings-install-title');
+            const desc = document.getElementById('settings-install-desc');
+            const icon = document.getElementById('settings-install-icon');
+            if (title) title.textContent = 'Zainstaluj na iPhone';
+            if (desc) desc.textContent = 'Dodaj do ekranu początkowego przez Safari';
+            if (icon) icon.className = 'bi bi-apple fs-4';
+        }
+    }
+}
+
+// Sprawdzenie stanu instalacji na start
+updateInstallPromptsVisibility();
+
+try {
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', updateInstallPromptsVisibility);
+} catch (e) {}
 
 // Nasłuchiwanie na event systemowy (Android / Chrome)
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    updateInstallPromptsVisibility();
 
     setTimeout(() => {
-        if (localStorage.getItem('pwa_install_dismissed') !== 'true' && installCard) {
+        if (localStorage.getItem('pwa_install_dismissed') !== 'true' && installCard && !isAppInstalled()) {
             installCard.classList.remove('hidden');
             installCard.style.display = 'flex';
         }
     }, 2000);
 });
 
-// Wykrywanie iOS (iPhone / iPad) oraz trybu Standalone
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+// Zdarzenie po pomyślnej instalacji
+window.addEventListener('appinstalled', () => {
+    console.log('PWA: Aplikacja została zainstalowana.');
+    deferredPrompt = null;
+    updateInstallPromptsVisibility();
+});
 
 // Na iOS Safari event 'beforeinstallprompt' nie istnieje – wyświetlamy instrukcję dodania do ekranu początkowego
-if (isIOS && !isStandalone && installCard) {
+if (isIOS && !isAppInstalled() && installCard) {
     if (localStorage.getItem('pwa_install_dismissed') !== 'true') {
         setTimeout(() => {
             const titleEl = document.getElementById('pwa-install-title');
@@ -218,6 +269,33 @@ if (btnInstall) {
             deferredPrompt = null;
             installCard.classList.add('hidden');
             installCard.style.display = 'none';
+            if (outcome === 'accepted') {
+                updateInstallPromptsVisibility();
+            }
+        }
+    });
+}
+
+if (btnSettingsInstall) {
+    btnSettingsInstall.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`Decyzja o instalacji PWA z Opcji: ${outcome}`);
+            deferredPrompt = null;
+            if (outcome === 'accepted') {
+                updateInstallPromptsVisibility();
+            }
+        } else if (isIOS) {
+            await showAlert(
+                'Instalacja na iPhone / iPad',
+                'Aby zainstalować aplikację na iPhone:<br><br>1. Dotknij ikony <b>Udostępnij</b> <i class="bi bi-box-arrow-up text-primary fs-5"></i> na dolnym pasku Safari.<br>2. Przewiń listę w dół i wybierz <b>Do ekranu początkowego</b> <i class="bi bi-plus-square text-primary fs-5"></i>.<br>3. Dotknij <b>Dodaj</b> w prawym górnym rogu.<br><br>Aplikacja pojawi się na pulpicie i będzie działać w 100% offline!'
+            );
+        } else {
+            await showAlert(
+                'Instalacja aplikacji',
+                'Aby zainstalować Express Tracker na komputerze lub telefonie:<br><br>Kliknij ikonę instalacji na pasku adresu przeglądarki (lub w menu przeglądarki wybierz: <b>Zainstaluj aplikację</b>).'
+            );
         }
     });
 }
