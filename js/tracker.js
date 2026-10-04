@@ -1,10 +1,13 @@
 import { Storage } from './storage.js';
-import { showPrompt, showAlert } from './modal.js';
+import { showPrompt, showAlert, showSuccessModal, showConfirm } from './modal.js';
 
 let intervalId = null;
 let startTime = null;
 let lastEarningsUpdate = 0;
 let cachedSettings = null;
+let cruisingSmokeInterval = null;
+let routeStatusInterval = null;
+let routeCycleStart = 0;
 
 let btnToggle, timeDisplay, earningsDisplay, dateDisplay, startTimeDisplay, btnEditStart;
 
@@ -86,15 +89,15 @@ function calculateEarnings(ms, timestamp) {
 
 function updateSessionInfo(timestamp) {
     if (!timestamp) {
-        dateDisplay.textContent = 'Data: ---';
-        startTimeDisplay.textContent = 'Rozpoczęto: ---';
+        if (dateDisplay) dateDisplay.innerHTML = '<i class="bi bi-calendar3 me-1 text-primary"></i> Data: ---';
+        if (startTimeDisplay) startTimeDisplay.innerHTML = '<i class="bi bi-clock-history me-1 text-primary"></i> Rozpoczęto: ---';
         if (btnEditStart) btnEditStart.classList.add('hidden');
         if (thresholdWarning) thresholdWarning.classList.add('hidden');
         return;
     }
     const dateObj = new Date(timestamp);
-    dateDisplay.textContent = `Data: ${dateObj.toLocaleDateString('pl-PL')}`;
-    startTimeDisplay.textContent = `Rozpoczęto: ${dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}`;
+    if (dateDisplay) dateDisplay.innerHTML = `<i class="bi bi-calendar3 me-1 text-primary"></i> Data: ${dateObj.toLocaleDateString('pl-PL')}`;
+    if (startTimeDisplay) startTimeDisplay.innerHTML = `<i class="bi bi-clock-history me-1 text-primary"></i> Rozpoczęto: ${dateObj.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}`;
 
     // Przycisk edycji czasu rozpoczęcia jest widoczny tylko podczas aktywnej sesji
     if (btnEditStart) btnEditStart.classList.remove('hidden');
@@ -104,7 +107,7 @@ function updateUI() {
     const now = Date.now();
     const elapsed = now - startTime;
 
-    timeDisplay.textContent = formatTime(elapsed);
+    if (timeDisplay) timeDisplay.textContent = formatTime(elapsed);
 
     // Wykrywanie soboty
     const isSaturday = new Date(startTime).getDay() === 6;
@@ -122,11 +125,25 @@ function updateUI() {
                 warningThresholdMs = Storage.getWarningMinutes();
             }
 
-            if (remainingMs <= warningThresholdMs) {
+            if (remainingMs > 0 && remainingMs <= warningThresholdMs) {
                 thresholdWarning.classList.remove('hidden');
                 thresholdWarning.classList.add('urgent');
                 thresholdCountdown.textContent = formatCountdown(remainingMs);
-                thresholdHint.innerHTML = "<b>Nie kończ jeszcze!</b> Mało brakuje do wyższego progu.";
+
+                const currentBillable = getBillableHours(elapsed);
+                const nextBillable = getBillableHours(elapsed + remainingMs + 5000);
+                const extraHours = Math.max(0, nextBillable - currentBillable);
+                const hourlyRate = parseFloat(cachedSettings?.hourlyRate || Storage.getSettings().hourlyRate) || 34;
+                const extraEarnings = (extraHours * hourlyRate).toFixed(2);
+
+                const bonusBadge = document.getElementById('threshold-bonus-badge');
+                if (bonusBadge) {
+                    bonusBadge.textContent = `+${extraEarnings} zł`;
+                }
+
+                if (thresholdHint) {
+                    thresholdHint.innerHTML = `<i class="bi bi-lightning-charge-fill me-1 text-warning"></i><span><b>Nie kończ jeszcze!</b> Za chwilę wskoczy +${extraHours} h (+${extraEarnings} zł).</span>`;
+                }
             } else {
                 thresholdWarning.classList.add('hidden');
             }
@@ -134,14 +151,67 @@ function updateUI() {
     }
 
     if (now - lastEarningsUpdate >= 100 || lastEarningsUpdate === 0) {
-        earningsDisplay.textContent = `Zarobek: ${calculateEarnings(elapsed, startTime)} zł`;
+        if (earningsDisplay) earningsDisplay.innerHTML = `<i class="bi bi-wallet2 text-success me-2"></i>Zarobek: <strong class="text-success">${calculateEarnings(elapsed, startTime)} zł</strong>`;
         lastEarningsUpdate = now;
     }
 }
 
 async function stopWork() {
+    // Sprawdź czy praca nie jest kończona tuż przed wyższym progiem (ostrzeżenie przed wczesnym wylogowaniem)
+    const isSaturday = new Date(startTime).getDay() === 6;
+    if (!isSaturday) {
+        const elapsed = Date.now() - startTime;
+        const remainingMs = getNextThresholdMs(elapsed);
+        let warningThresholdMs = 300000; // Domyślnie 5 min
+        if (typeof Storage.getWarningMinutes === 'function') {
+            warningThresholdMs = Storage.getWarningMinutes();
+        }
+
+        if (remainingMs > 0 && remainingMs <= warningThresholdMs) {
+            const remainingMins = Math.floor(remainingMs / 60000);
+            const remainingSecs = Math.floor((remainingMs % 60000) / 1000);
+            const timeStr = remainingMins > 0 ? `${remainingMins} min ${remainingSecs} s` : `${remainingSecs} s`;
+
+            const currentBillable = getBillableHours(elapsed);
+            const nextBillable = getBillableHours(elapsed + remainingMs + 5000);
+            const extraHours = Math.max(0, nextBillable - currentBillable);
+            const hourlyRate = parseFloat(cachedSettings?.hourlyRate || Storage.getSettings().hourlyRate) || 34;
+            const extraMoney = (extraHours * hourlyRate).toFixed(2);
+
+            const warningHtml = `
+                <div class="threshold-early-warning-modal-box p-3 rounded-4 mb-3 text-start">
+                    <div class="d-flex align-items-center gap-2 mb-2 text-warning fw-bold fs-6">
+                        <i class="bi bi-hourglass-split fs-4"></i>
+                        <span>Zostało tylko <span class="badge bg-warning text-dark px-2 py-1 fs-6">${timeStr}</span> do progu!</span>
+                    </div>
+                    <p class="small text-secondary mb-3 lh-sm">
+                        Twój czas pracy jest rozliczany w progach. Jeśli popracujesz jeszcze <b>${timeStr}</b>, zaliczy Ci się dodatkowe <b>+${extraHours} h</b> do wypłaty.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-body-secondary border">
+                        <span class="small fw-semibold text-muted">Dodatkowy zarobek:</span>
+                        <span class="fs-5 fw-bold text-success">+${extraMoney} zł</span>
+                    </div>
+                </div>
+                <div class="small text-muted text-center">Czy na pewno chcesz zakończyć trasę i stracić wyższy próg?</div>
+            `;
+
+            const confirmed = await showConfirm(
+                'Mało brakuje do wyższego progu!',
+                warningHtml,
+                'Zakończ mimo to',
+                'Kontynuuj pracę'
+            );
+
+            if (!confirmed) {
+                // Anulowano zakończenie trasy - licznik i animacja pracują bez zmian!
+                return;
+            }
+        }
+    }
+
     clearInterval(intervalId);
     intervalId = null;
+    stopCruisingRouteAnimation();
 
     let endObj = new Date();
     const startObj = new Date(startTime);
@@ -154,7 +224,7 @@ async function stopWork() {
         // Czas ucina się na 23:59:59 tego samego dnia, w którym rozpoczęto pracę
         endObj = new Date(startObj);
         endObj.setHours(23, 59, 0, 0);
-        await showAlert('Zakończono sesję o 23:59. Czas pracy nie może wykraczać na kolejny dzień.');
+        await showAlert('Zakończono sesję o 23:59', 'Czas pracy nie może wykraczać na kolejny dzień.');
     }
 
     const endTime = endObj.getTime();
@@ -175,16 +245,18 @@ async function stopWork() {
     startTime = null;
     lastEarningsUpdate = 0;
 
-    btnToggle.textContent = 'Rozpocznij pracę';
-    btnToggle.classList.remove('active-btn');
+    if (btnToggle) {
+        btnToggle.innerHTML = '<i class="bi bi-play-circle-fill me-2 fs-4"></i><span>Rozpocznij pracę</span>';
+        btnToggle.classList.remove('active-btn');
+    }
 
-    document.querySelector('.tracker-box').classList.remove('timer-running');
+    const trackerBox = document.querySelector('.tracker-box');
+    if (trackerBox) trackerBox.classList.remove('timer-running');
 
-    timeDisplay.textContent = '00:00:00';
-    earningsDisplay.textContent = 'Zarobek: 0.00 zł';
+    if (timeDisplay) timeDisplay.textContent = '00:00:00';
+    if (earningsDisplay) earningsDisplay.innerHTML = '<i class="bi bi-wallet2 text-success me-2"></i>Zarobek: <strong class="text-success">0.00 zł</strong>';
     updateSessionInfo(null);
 
-    const isSaturday = startObj.getDay() === 6;
     if (isSaturday) {
         const settings = Storage.getSettings();
         const baseRate = parseFloat(settings.hourlyRate);
@@ -194,20 +266,122 @@ async function stopWork() {
         if (actualHours > 1) {
             actualRate = parseFloat(finalEarnings) / actualHours;
 
-            let color = 'var(--text)';
-            if (actualRate > baseRate) color = '#4CAF50';
-            else if (actualRate < baseRate) color = '#F44336';
+            let colorClass = 'text-body';
+            if (actualRate > baseRate) colorClass = 'text-success';
+            else if (actualRate < baseRate) colorClass = 'text-danger';
     
-            const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div style="font-size: 32px; font-weight: bold; color: ${color}; text-align: center;">${actualRate.toFixed(2)} zł/h</div>`;
+            const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div class="fs-1 fw-bold ${colorClass} text-center">${actualRate.toFixed(2)} zł/h</div>`;
     
             await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
         }
     }
 
-    await showAlert(
-        'Trasa zakończona',
-        `Zaliczone godziny: <b>${billableTime}h</b><br><br>Zarobek: <b style="font-size: 20px; color: #4CAF50;">${finalEarnings} zł</b>`
-    );
+    await showSuccessModal({
+        title: 'Trasa zakończona',
+        message: 'Sesja pracy została pomyślnie zakończona i zapisana w historii.',
+        hours: `${billableTime} h`,
+        earned: `${finalEarnings} zł`,
+        buttonText: 'Gotowe'
+    });
+}
+
+
+function spawnCruisingSmokePuff() {
+    const scene = document.getElementById('active-route-scene');
+    if (!scene || scene.classList.contains('d-none')) return;
+
+    const smokeLayer = document.getElementById('smoke-layer');
+    const shuttleBus = document.getElementById('route-shuttle-bus');
+    const stage = document.getElementById('route-stage');
+    if (!smokeLayer || !shuttleBus || !stage) return;
+
+    const stageRect = stage.getBoundingClientRect();
+    const busRect = shuttleBus.getBoundingClientRect();
+    if (stageRect.width === 0 || busRect.width === 0) return;
+
+    // Sprawdź czy bus jest obrócony (scaleX < 0)
+    let isFlipped = false;
+    try {
+        const style = window.getComputedStyle(shuttleBus);
+        const transform = style.transform || style.webkitTransform;
+        if (transform && transform !== 'none') {
+            const matrix = new DOMMatrixReadOnly(transform);
+            isFlipped = matrix.a < 0;
+        }
+    } catch (e) {
+        isFlipped = false;
+    }
+
+    // Wylicz pozycję rury wydechowej z tyłu pojazdu
+    let puffX, driftX;
+    if (!isFlipped) {
+        // Jedzie w prawo: tył jest po lewej stronie
+        puffX = (busRect.left - stageRect.left) + 4;
+        driftX = -45;
+    } else {
+        // Jedzie w lewo: tył jest po prawej stronie
+        puffX = (busRect.right - stageRect.left) - 4;
+        driftX = 45;
+    }
+    const puffY = (busRect.top - stageRect.top) + (busRect.height * 0.6);
+
+    const puff = document.createElement('div');
+    puff.className = 'route-smoke-puff';
+    puff.style.setProperty('--puff-drift-x', `${driftX}px`);
+    const size = Math.floor(8 + Math.random() * 7);
+    puff.style.width = `${size}px`;
+    puff.style.height = `${size}px`;
+    puff.style.left = `${puffX}px`;
+    puff.style.top = `${puffY + (Math.random() * 4 - 2)}px`;
+
+    smokeLayer.appendChild(puff);
+
+    setTimeout(() => {
+        if (puff.parentNode) puff.remove();
+    }, 1150);
+}
+
+function startCruisingRouteAnimation() {
+    const scene = document.getElementById('active-route-scene');
+    if (scene) {
+        scene.classList.remove('d-none');
+    }
+
+    // Wyczyszczenie ewentualnych starych interwałów
+    stopCruisingRouteAnimation(false);
+
+    if (scene) {
+        scene.classList.remove('d-none');
+    }
+
+    routeCycleStart = Date.now();
+
+    // Ruchomy dymek ze spalin wydechu co ~220ms
+    cruisingSmokeInterval = setInterval(spawnCruisingSmokePuff, 220);
+}
+
+function stopCruisingRouteAnimation(hideScene = true) {
+    if (cruisingSmokeInterval) {
+        clearInterval(cruisingSmokeInterval);
+        cruisingSmokeInterval = null;
+    }
+    if (routeStatusInterval) {
+        clearInterval(routeStatusInterval);
+        routeStatusInterval = null;
+    }
+    routeCycleStart = 0;
+
+    const smokeLayer = document.getElementById('smoke-layer');
+    if (smokeLayer) {
+        smokeLayer.innerHTML = '';
+    }
+
+    if (hideScene) {
+        const scene = document.getElementById('active-route-scene');
+        if (scene) {
+            scene.classList.add('d-none');
+        }
+    }
 }
 
 function startWork() {
@@ -217,14 +391,20 @@ function startWork() {
 
     updateSessionInfo(startTime);
 
-    btnToggle.textContent = 'Zakończ pracę';
-    btnToggle.classList.add('active-btn');
+    if (btnToggle) {
+        btnToggle.innerHTML = '<i class="bi bi-stop-circle-fill me-2 fs-4"></i><span>Zakończ pracę</span>';
+        btnToggle.classList.add('active-btn');
+    }
 
-    document.querySelector('.tracker-box').classList.add('timer-running');
+    const trackerBox = document.querySelector('.tracker-box');
+    if (trackerBox) trackerBox.classList.add('timer-running');
 
     intervalId = setInterval(updateUI, 1000);
     cachedSettings = Storage.getSettings();
     updateUI();
+
+    // Stała animacja jazdy busika od magazynu do paczkomatu ze spalinami i paczkami
+    startCruisingRouteAnimation();
 }
 
 export function initTracker() {
@@ -239,11 +419,16 @@ export function initTracker() {
     thresholdCountdown = document.getElementById('threshold-countdown');
     thresholdHint = document.getElementById('threshold-hint');
 
+    if (btnEditStart) {
+        btnEditStart.innerHTML = '<i class="bi bi-pencil-square me-1"></i>Edytuj';
+    }
+
     // --- OBSŁUGA PRZYPOMNIENIA O EKSPORCIE ---
     const exportReminderCard = document.getElementById('export-reminder-card');
     const btnSnoozeExport = document.getElementById('btn-snooze-export');
+    const btnExportNow = document.getElementById('btn-export-reminder-now');
 
-    if (exportReminderCard && btnSnoozeExport && typeof Storage.getLastExportDate === 'function') {
+    if (exportReminderCard && typeof Storage.getLastExportDate === 'function') {
         const lastExport = Storage.getLastExportDate();
         const now = Date.now();
         const days30 = 30 * 24 * 60 * 60 * 1000; // 30 dni w milisekundach
@@ -253,12 +438,31 @@ export function initTracker() {
             exportReminderCard.classList.remove('hidden');
         }
 
+        // Pobierz kopię teraz (one-click)
+        if (btnExportNow) {
+            btnExportNow.addEventListener('click', async () => {
+                if (typeof Storage.exportBackupData === 'function') {
+                    Storage.exportBackupData();
+                }
+                Storage.setLastExportDate(Date.now());
+                exportReminderCard.classList.add('hidden');
+
+                await showSuccessModal({
+                    title: 'Kopia zapasowa pobrana',
+                    message: 'Plik JSON z Twoją historią tras i ustawieniami został pomyślnie pobrany.',
+                    buttonText: 'Świetnie'
+                });
+            });
+        }
+
         // Przypomnij za 7 dni
-        btnSnoozeExport.addEventListener('click', () => {
-            exportReminderCard.classList.add('hidden');
-            const snoozeTime = Date.now() - (23 * 24 * 60 * 60 * 1000);
-            Storage.setLastExportDate(snoozeTime);
-        });
+        if (btnSnoozeExport) {
+            btnSnoozeExport.addEventListener('click', () => {
+                exportReminderCard.classList.add('hidden');
+                const snoozeTime = Date.now() - (23 * 24 * 60 * 60 * 1000);
+                Storage.setLastExportDate(snoozeTime);
+            });
+        }
     }
     // -----------------------------------------
 
@@ -267,7 +471,7 @@ export function initTracker() {
     const btnHideWhatsNew = document.getElementById('btn-hide-whats-new');
 
     if (whatsNewCard && btnHideWhatsNew) {
-        let messageName = 'news-v1.4.2';
+        let messageName = 'news-v2.1';
 
         if (localStorage.getItem(messageName) !== 'true') {
             whatsNewCard.classList.remove('hidden');
@@ -322,14 +526,25 @@ export function initTracker() {
     if (activeSession) {
         startTime = activeSession.startTime;
         updateSessionInfo(startTime);
-        btnToggle.textContent = 'Zakończ pracę';
+        btnToggle.innerHTML = '<i class="bi bi-stop-circle-fill me-2 fs-4"></i><span>Zakończ pracę</span>';
         btnToggle.classList.add('active-btn');
 
-        document.querySelector('.tracker-box').classList.add('timer-running');
+        const trackerBox = document.querySelector('.tracker-box');
+        if (trackerBox) trackerBox.classList.add('timer-running');
+
+        startCruisingRouteAnimation();
 
         intervalId = setInterval(updateUI, 1000);
         updateUI();
     } else {
         updateSessionInfo(null);
+        stopCruisingRouteAnimation();
     }
+
+    // Natychmiastowe odświeżenie licznika po wybudzeniu iPhone'a lub powrocie z innej aplikacji
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && startTime && intervalId) {
+            updateUI();
+        }
+    });
 }

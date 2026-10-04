@@ -1,9 +1,8 @@
 import { Storage } from './storage.js';
-import { showPrompt, showConfirm, showAlert, showManualCheckModal } from './modal.js';
+import { showPrompt, showConfirm, showAlert, showManualCheckModal, hideManualCheckModal, showMonthSelector } from './modal.js';
 
 // Funkcja asynchronicznie pobierająca bibliotekę Excela
 function loadExcelLibrary() {
-    
     return new Promise((resolve, reject) => {
         // Sprawdzenie czy biblioteka jest już załadowana
         if (window.XLSX) {
@@ -92,7 +91,7 @@ export function initExcel() {
                     });
 
                     if (Object.keys(excelDataByDate).length === 0) {
-                        alert('Nie udało się odczytać żadnych kwot. Upewnij się, że plik ma poprawne dane w kolumnach B (Data) i F (Kwota).');
+                        showAlert('Błąd odczytu', 'Nie udało się odczytać żadnych kwot. Upewnij się, że plik ma poprawne dane w kolumnach B (Data) i F (Kwota).');
                         return;
                     }
 
@@ -126,27 +125,38 @@ export function initExcel() {
                     const totalDiff = totalExcel - totalApp;
 
                     let html = `
-                        <div class="month-card excel-result-card">
-                            <div class="excel-month-header">
-                                Rozliczenie: <b>${displayMonthName}</b>
+                        <div class="month-card excel-result-card shadow-sm rounded-4 overflow-hidden mb-4">
+                            <div class="excel-month-header p-3 text-center text-white fw-bold d-flex align-items-center justify-content-center gap-2">
+                                <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>
+                                <span>Rozliczenie: <b>${displayMonthName}</b></span>
                             </div>
 
-                            <div class="comparison-summary">
-                                <div>Excel<br><span class="comparison-summary-value">${totalExcel.toFixed(2)}</span></div>
-                                <div>Aplikacja<br><span class="comparison-summary-value">${totalApp.toFixed(2)}</span></div>
-                                <div>Różnica<br><span class="comparison-summary-value ${totalDiff >= 0 ? 'match-ok' : 'match-diff'}">${totalDiff >= 0 ? '+' : ''}${totalDiff.toFixed(2)}</span></div>
+                            <div class="comparison-summary d-flex justify-content-around p-3 border-bottom text-center">
+                                <div>
+                                    <span class="small text-muted d-block"><i class="bi bi-file-earmark-excel text-success me-1"></i>Excel</span>
+                                    <span class="comparison-summary-value fw-bold fs-5">${totalExcel.toFixed(2)} zł</span>
+                                </div>
+                                <div>
+                                    <span class="small text-muted d-block"><i class="bi bi-phone text-primary me-1"></i>Aplikacja</span>
+                                    <span class="comparison-summary-value fw-bold fs-5">${totalApp.toFixed(2)} zł</span>
+                                </div>
+                                <div>
+                                    <span class="small text-muted d-block"><i class="bi bi-plus-slash-minus me-1"></i>Różnica</span>
+                                    <span class="comparison-summary-value fw-bold fs-5 ${totalDiff >= 0 ? 'text-success' : 'text-danger'}">${totalDiff >= 0 ? '+' : ''}${totalDiff.toFixed(2)} zł</span>
+                                </div>
                             </div>
 
-                            <table class="comparison-table" style="box-shadow: none; border-radius: 0;">
-                                <thead>
-                                    <tr>
-                                        <th>Dzień</th>
-                                        <th>Excel</th>
-                                        <th>Aplikacja</th>
-                                        <th>Różnica</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
+                            <div class="table-responsive m-0">
+                                <table class="comparison-table table table-hover align-middle text-center mb-0">
+                                    <thead class="comparison-table-head text-uppercase small">
+                                        <tr>
+                                            <th>Dzień</th>
+                                            <th>Excel</th>
+                                            <th>Aplikacja</th>
+                                            <th>Różnica</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                     `;
 
                     filteredDates.forEach(date => {
@@ -158,26 +168,27 @@ export function initExcel() {
                         let statusHtml = '';
 
                         if (Math.abs(diff) < 0.05) {
-                            statusHtml = '<span class="match-ok">✓</span>';
+                            statusHtml = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Zgodne</span>';
                         } else if (diff > 0) {
-                            statusHtml = `<span class="match-ok">+${diff.toFixed(2)} zł</span>`;
+                            statusHtml = `<span class="text-success fw-bold"><i class="bi bi-arrow-up-circle-fill me-1"></i>+${diff.toFixed(2)} zł</span>`;
                         } else {
-                            statusHtml = `<span class="match-diff">${diff.toFixed(2)} zł</span>`;
+                            statusHtml = `<span class="text-danger fw-bold"><i class="bi bi-arrow-down-circle-fill me-1"></i>${diff.toFixed(2)} zł</span>`;
                         }
 
                         html += `
                             <tr>
-                                <td><b>${dayNum}</b></td>
-                                <td>${exVal.toFixed(2)}</td>
-                                <td>${myVal.toFixed(2)}</td>
+                                <td class="fw-bold">${dayNum}</td>
+                                <td>${exVal.toFixed(2)} zł</td>
+                                <td>${myVal.toFixed(2)} zł</td>
                                 <td>${statusHtml}</td>
                             </tr>
                         `;
                     });
 
                     html += `
-                            </tbody>
-                        </table>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     `;
 
@@ -186,7 +197,7 @@ export function initExcel() {
 
                 } catch (err) {
                     console.error(err);
-                    alert("Wystąpił błąd podczas analizy pliku. Zobacz szczegóły w konsoli (F12).");
+                    showAlert("Błąd", "Wystąpił błąd podczas analizy pliku. Zobacz szczegóły w konsoli (F12).");
                 }
             };
 
@@ -239,6 +250,7 @@ export function initExcel() {
                 );
 
                 if (tabletEarnedStr === null) {
+                    hideManualCheckModal();
                     const savePartial = await showConfirm('Przerwano sprawdzanie', 'Czy chcesz zapisać wyniki tylko do momentu przerwania?');
                     if (!savePartial) return; 
                     break; 
@@ -256,6 +268,7 @@ export function initExcel() {
                 });
             }
 
+            hideManualCheckModal();
             saveManualData(targetMonth, manualData);
             renderManualChecks();
         });
@@ -264,52 +277,6 @@ export function initExcel() {
     // ==========================================
     // 3. FUNKCJE POMOCNICZE
     // ==========================================
-    
-    function showMonthSelector(monthsArray) {
-        return new Promise((resolve) => {
-            const overlay = document.createElement('div');
-            overlay.className = 'modal-overlay';
-            overlay.style.zIndex = '99999';
-
-            const optionsHtml = monthsArray.map(m => {
-                const [year, month] = m.split('-');
-                const d = new Date(year, parseInt(month) - 1, 1);
-                let monthName = d.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' });
-                monthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-                return `<option value="${m}">${monthName}</option>`;
-            }).join('');
-
-            overlay.innerHTML = `
-                <div class="modal-box" style="animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
-                    <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 20px; font-weight: 800; color: var(--text);">Wybierz miesiąc</h3>
-                    <p style="font-size: 15px; color: var(--text-muted); margin-bottom: 20px;">Dla jakiego miesiąca chcesz sprawdzić zarobki z tabletu?</p>
-                    
-                    <select id="month-select-input" style="width: 100%; padding: 14px; margin-bottom: 20px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; font-weight: bold; color: var(--text); background: white; outline: none;">
-                        ${optionsHtml}
-                    </select>
-                    
-                    <div class="modal-actions" style="display: flex; gap: 12px;">
-                        <button id="btn-month-confirm" class="btn-blue" style="flex: 1; margin: 0;">Zatwierdź</button>
-                        <button id="btn-month-cancel" class="btn-secondary" style="flex: 1; margin: 0;">Anuluj</button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(overlay);
-
-            const btnConfirm = overlay.querySelector('#btn-month-confirm');
-            const btnCancel = overlay.querySelector('#btn-month-cancel');
-            const select = overlay.querySelector('#month-select-input');
-
-            const closeModal = (value) => {
-                overlay.remove();
-                resolve(value);
-            };
-
-            btnConfirm.onclick = () => closeModal(select.value);
-            btnCancel.onclick = () => closeModal(null);
-        });
-    }
 
     function saveManualData(month, data) {
         const singleCheck = {
@@ -341,7 +308,7 @@ export function initExcel() {
             const totalApp = data.reduce((sum, item) => sum + parseFloat(item.appEarned), 0);
             const totalTablet = data.reduce((sum, item) => sum + parseFloat(item.tabletEarned), 0);
             const diff = totalTablet - totalApp;
-            const diffColor = diff >= -0.05 ? 'var(--primary)' : 'var(--danger)';
+            const diffClass = diff >= -0.05 ? 'text-success' : 'text-danger';
             const diffSign = diff > 0.05 ? '+' : '';
 
             const monthDate = new Date(`${month}-01`);
@@ -350,22 +317,25 @@ export function initExcel() {
 
             let rowsHtml = data.map((item, index) => {
                 const rowDiff = parseFloat(item.tabletEarned) - parseFloat(item.appEarned);
-                let statusHtml = '<span class="match-ok">✓</span>';
+                let statusHtml = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Zgodne</span>';
                 
                 if (Math.abs(rowDiff) >= 0.05) {
                     const sign = rowDiff > 0 ? '+' : '';
-                    const rowDiffColor = rowDiff > 0 ? 'var(--primary)' : 'var(--danger)';
-                    statusHtml = `<span class="match-diff" style="color:${rowDiffColor};">${sign}${rowDiff.toFixed(2)}</span>`;
+                    const rowDiffClass = rowDiff > 0 ? 'text-success' : 'text-danger';
+                    const rowIcon = rowDiff > 0 ? 'bi-arrow-up-circle-fill' : 'bi-arrow-down-circle-fill';
+                    statusHtml = `<span class="${rowDiffClass} fw-bold"><i class="bi ${rowIcon} me-1"></i>${sign}${rowDiff.toFixed(2)} zł</span>`;
                 }
 
                 return `
                 <tr>
-                    <td style="font-weight: bold;">${item.dateStr.split('.').slice(0, 2).join('.')}</td>
-                    <td>${item.appEarned}</td>
+                    <td class="fw-bold">${item.dateStr.split('.').slice(0, 2).join('.')}</td>
+                    <td>${item.appEarned} zł</td>
                     <td class="tablet-cell">
-                        <div class="tablet-cell-content">
-                            <span>${item.tabletEarned}</span>
-                            <button class="btn-edit-tablet" data-month="${month}" data-index="${index}" style="background: none; border: none; padding: 2px; cursor: pointer; font-size: 14px;">✏️</button>
+                        <div class="d-inline-flex align-items-center justify-content-center gap-2">
+                            <span class="fw-semibold">${item.tabletEarned} zł</span>
+                            <button class="btn btn-sm btn-outline-primary rounded-circle p-1 d-inline-flex align-items-center justify-content-center btn-edit-tablet" data-month="${month}" data-index="${index}" style="width: 28px; height: 28px;" title="Edytuj">
+                                <i class="bi bi-pencil-fill" style="font-size: 11px;"></i>
+                            </button>
                         </div>
                     </td>
                     <td>${statusHtml}</td>
@@ -374,30 +344,42 @@ export function initExcel() {
             }).join('');
 
             html += `
-            <div class="month-card" style="margin-top: 25px; box-shadow: var(--shadow-md); border-radius: var(--radius-lg); overflow: hidden; background: white;">
-                <div class="manual-check-header">
-                    Ręczne sprawdzenie: <b>${capMonthName}</b>
+            <div class="month-card shadow-sm rounded-4 overflow-hidden mb-4">
+                <div class="manual-check-header p-3 text-center text-white fw-bold d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-tablet-landscape-fill fs-5"></i>
+                    <span>Ręczne sprawdzenie: <b>${capMonthName}</b></span>
                 </div>
                 
-                <div style="display: flex; justify-content: space-around; padding: 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; font-weight: bold; text-align: center; font-size: 13px;">
-                    <div>Aplikacja<br><span style="color:var(--text); font-size: 15px;">${totalApp.toFixed(2)}</span></div>
-                    <div>Tablet<br><span style="color:var(--text); font-size: 15px;">${totalTablet.toFixed(2)}</span></div>
-                    <div>Różnica<br><span style="color:${diffColor}; font-size: 15px;">${diffSign}${diff.toFixed(2)}</span></div>
+                <div class="comparison-summary d-flex justify-content-around p-3 border-bottom text-center">
+                    <div>
+                        <span class="small text-muted d-block"><i class="bi bi-phone text-primary me-1"></i>Aplikacja</span>
+                        <span class="comparison-summary-value fw-bold fs-5">${totalApp.toFixed(2)} zł</span>
+                    </div>
+                    <div>
+                        <span class="small text-muted d-block"><i class="bi bi-tablet text-info me-1"></i>Tablet</span>
+                        <span class="comparison-summary-value fw-bold fs-5">${totalTablet.toFixed(2)} zł</span>
+                    </div>
+                    <div>
+                        <span class="small text-muted d-block"><i class="bi bi-plus-slash-minus me-1"></i>Różnica</span>
+                        <span class="comparison-summary-value fw-bold fs-5 ${diffClass}">${diffSign}${diff.toFixed(2)} zł</span>
+                    </div>
                 </div>
 
-                <table class="comparison-table" style="box-shadow: none; border-radius: 0;">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Apka</th>
-                            <th>Tablet</th>
-                            <th>Różnica</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml}
-                    </tbody>
-                </table>
+                <div class="table-responsive m-0">
+                    <table class="comparison-table table table-hover align-middle text-center mb-0">
+                        <thead class="comparison-table-head text-uppercase small">
+                            <tr>
+                                <th>Data</th>
+                                <th>Apka</th>
+                                <th>Tablet</th>
+                                <th>Różnica</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             `;
         });
@@ -415,11 +397,11 @@ export function initExcel() {
                 const newValStr = await showManualCheckModal(
                     `Korekta: ${record.dateStr}`,
                     `Podaj kwotę wpisaną na tablecie (zł):`,
-                    record.appEarned
+                    record.tabletEarned || record.appEarned
                 );
+                
+                hideManualCheckModal();
 
-                
-                
                 if (newValStr !== null && newValStr.trim() !== '') {
                     const cleanInput = String(newValStr).replace(/[^\d.,]/g, '').replace(',', '.');
                     const newEarned = parseFloat(cleanInput);

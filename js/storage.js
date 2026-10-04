@@ -174,7 +174,7 @@ export const Storage = {
         document.body.appendChild(link);
         link.click();
         link.remove();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 20000);
 
         return backup;
     },
@@ -201,7 +201,36 @@ export const Storage = {
         }
 
         if (importedData.sessions) {
-            Storage.setSessions(importedData.sessions);
+            const normalizedSessions = importedData.sessions.map(s => {
+                const start = typeof s.start === 'string' ? new Date(s.start).getTime() : Number(s.start);
+                const end = typeof s.end === 'string' ? new Date(s.end).getTime() : Number(s.end);
+                const startDate = new Date(start);
+                const isSaturday = s.isSaturday !== undefined ? Boolean(s.isSaturday) : startDate.getDay() === 6;
+                const durationMs = Number(s.durationMs ?? s.duration ?? (end - start));
+
+                let billableHours = s.billableHours != null ? parseFloat(s.billableHours) : null;
+                if (billableHours == null || isNaN(billableHours)) {
+                    const totalSec = Math.floor(durationMs / 1000);
+                    const fullH = Math.floor(totalSec / 3600);
+                    const remSec = totalSec % 3600;
+                    let extra = 0;
+                    if (remSec >= 2700) extra = 1;
+                    else if (remSec >= 900) extra = 0.5;
+                    const calc = fullH + extra;
+                    billableHours = isSaturday ? calc : Math.max(8, calc);
+                }
+
+                return {
+                    ...s,
+                    start,
+                    end,
+                    durationMs,
+                    billableHours,
+                    isSaturday,
+                    earned: s.earned != null ? String(s.earned) : '0.00'
+                };
+            });
+            Storage.setSessions(normalizedSessions);
         }
 
         localStorage.setItem(KEYS.BACKUP_FALLBACK, JSON.stringify(Storage.getBackupData()));

@@ -1,283 +1,952 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="pl" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>ExpressTracker</title>
 
     <link rel="icon" type="image/png" href="icon.png">
 
-    <!-- PWA Manifest -->
+    <!-- PWA Manifest & iOS Safari Support -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#2196F3">
+    <meta name="theme-color" content="#0284c7" id="theme-color-meta">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ExpressTracker">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
 
+    <!-- Theme Initialization -->
     <script>
         try {
             const settings = JSON.parse(localStorage.getItem('wt_settings') || '{}');
-            if (settings.darkMode === true) {
-                document.documentElement.classList.add('dark-theme');
-            }
+            const isDark = settings.darkMode === true;
+            document.documentElement.classList.toggle('dark-theme', isDark);
+            document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', isDark ? '#0b1120' : '#0284c7');
         } catch (error) {
         }
     </script>
+
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons 1.11.3 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
     
 <body>
 
+    <!-- TOP HEADER -->
+    <header class="app-header d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+            <span class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-3 p-2" style="width: 38px; height: 38px;">
+                <i class="bi bi-speedometer2 fs-5"></i>
+            </span>
+            <span class="brand-title">Express Tracker</span>
+        </div>
+        <div>
+            <span id="network-badge" class="badge online">
+                <i class="bi bi-wifi"></i> Online
+            </span>
+        </div>
+    </header>
+
     <!-- GŁÓWNY KONTENER NA WIDOKI -->
-    <main id="app-content">
+    <main id="app-content" class="container px-3 py-3" style="max-width: 600px;">
+        
         <!-- WIDOK 1: REJESTRACJA CZASU -->
         <section id="view-tracker" class="view active">
-            <div class="header-with-badge">
-                <h1>Express Tracker</h1>
-                <span id="network-badge" class="badge"></span>
-            </div><br>
-            
-            <div class="tracker-box">
-                <div class="session-info">
-                    <p id="current-date">Data: ---</p>
-                    <p id="start-time-display">Start: ---</p>
-                    <button id="btn-edit-start" class="btn-blue-small">Edytuj</button>
+            <div class="tracker-box shadow-sm mb-4">
+                <div class="session-info d-flex justify-content-between align-items-center mb-3">
+                    <div class="text-start">
+                        <p id="current-date" class="m-0"><i class="bi bi-calendar3 me-1 text-primary"></i> Data: ---</p>
+                        <p id="start-time-display" class="m-0"><i class="bi bi-clock-history me-1 text-primary"></i> Start: ---</p>
+                    </div>
+                    <button id="btn-edit-start" class="btn btn-sm btn-outline-primary rounded-pill px-3 hidden">
+                        <i class="bi bi-pencil-square me-1"></i> Edytuj
+                    </button>
                 </div>
 
-                <div class="tracker-display">00:00:00</div>
-                <div class="earnings-display">Zarobek: 0.00 zł</div>
+                <div class="tracker-display my-2">00:00:00</div>
+                <div class="earnings-display">
+                    <i class="bi bi-wallet2 text-success me-2"></i>Zarobek: <strong class="text-success">0.00 zł</strong>
+                </div>
             </div>
 
-            <div id="threshold-warning" class="hidden">
-                Większa wypłata za: <strong id="threshold-countdown">--:--</strong><br>
-                <span id="threshold-hint">Pracuj dalej, aby osiągnąć wyższy próg!</span>
+            <!-- OSTRZEŻENIE O PROGU -->
+            <div id="threshold-warning" class="threshold-warning-card hidden mb-4 shadow-sm">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="threshold-warning-icon-pulse">
+                            <i class="bi bi-hourglass-split fs-4"></i>
+                        </div>
+                        <div class="text-start">
+                            <span class="threshold-card-label small fw-bold text-uppercase d-block">Wyższy próg zarobku</span>
+                            <div class="d-flex align-items-baseline gap-1">
+                                <span class="small text-secondary">Zostało tylko:</span>
+                                <strong id="threshold-countdown" class="threshold-time-highlight">--:--</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <span id="threshold-bonus-badge" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fw-bold fs-6">
+                            +0.00 zł
+                        </span>
+                    </div>
+                </div>
+                <div id="threshold-hint" class="threshold-card-hint small d-flex align-items-center justify-content-center gap-1 pt-2 border-top border-warning-subtle">
+                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                    <span><b>Nie kończ jeszcze!</b> Mało brakuje do wyższego progu.</span>
+                </div>
             </div>
-            <br>
 
-            <button id="btn-toggle-work">Rozpocznij pracę</button>
-            <script>
-                try {
-                    const activeSession = JSON.parse(localStorage.getItem('wt_active_session') || 'null');
-                    if (activeSession && activeSession.startTime) {
-                        const button = document.getElementById('btn-toggle-work');
-                        button.textContent = 'Zakończ pracę';
-                        button.classList.add('active-btn');
+            <!-- PRZYCISK START / STOP -->
+            <div class="mb-4">
+                <button id="btn-toggle-work" class="btn-toggle-work-main shadow">
+                    <i class="bi bi-play-circle-fill me-2 fs-4"></i>
+                    <span>Rozpocznij pracę</span>
+                </button>
+                <script>
+                    try {
+                        const activeSession = JSON.parse(localStorage.getItem('wt_active_session') || 'null');
+                        if (activeSession && activeSession.startTime) {
+                            const button = document.getElementById('btn-toggle-work');
+                            button.innerHTML = '<i class="bi bi-stop-circle-fill me-2 fs-4"></i><span>Zakończ pracę</span>';
+                            button.classList.add('active-btn');
+                            const scene = document.getElementById('active-route-scene');
+                            if (scene) scene.classList.remove('d-none');
+                        }
+                    } catch (error) {
                     }
-                } catch (error) {
-                }
-            </script>
+                </script>
+            </div>
 
-            <div id="export-reminder-card" class="rate-card hidden" style="margin-top: 20px; background-color: #f0f8ff; border: 1px solid #bae6fd; padding: 16px; display: block; box-shadow: none;">
-                <div style="display: flex; gap: 15px; align-items: flex-start;">
-                    <span style="font-size: 26px; line-height: 1;">💾</span>
-                    <div>
-                        <strong style="color: #0369a1; font-size: 15px; display: block; margin-bottom: 4px;">
-                            Czas na kopię zapasową
-                        </strong>
-                        <p style="font-size: 13px; color: #475569; margin: 0; line-height: 1.4;">
-                            Minęło już 30 dni. Przejdź do zakładki <b>Opcje</b> i pobierz plik JSON, aby bezpiecznie zachować historię swoich tras.
+            <!-- AKTYWNA TRASA: MAGAZYN (LEWO) ➔ BUSIK ➔ PACZKOMAT (PRAWO) -->
+            <div id="active-route-scene" class="active-route-card shadow-sm rounded-4 overflow-hidden mb-4 d-none">
+                <div class="d-flex align-items-center justify-content-between px-3 pt-2 pb-1">
+                    <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 small fw-semibold">
+                        <i class="bi bi-truck text-primary me-1"></i> Trasa w toku...
+                    </span>
+                </div>
+                
+                <div class="route-stage" id="route-stage">
+                    <!-- Droga na dole łącząca magazyn z paczkomatem -->
+                    <div class="route-road">
+                        <div class="route-road-markings"></div>
+                    </div>
+
+                    <!-- 1. Magazyn po lewej stronie -->
+                    <div class="stage-building warehouse-building" id="stage-warehouse" title="Magazyn">
+                        <div class="warehouse-roof"></div>
+                        <div class="warehouse-body">
+                            <span class="warehouse-sign">MAGAZYN</span>
+                            <div class="warehouse-gate">
+                                <div class="warehouse-shutter"></div>
+                                <div class="warehouse-door-open">
+                                    <div class="warehouse-cargo-box"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Paczkomat po prawej stronie -->
+                    <div class="stage-building paczkomat-building" id="stage-paczkomat" title="Paczkomat">
+                        <div class="paczkomat-canopy">
+                            <span>APM</span>
+                        </div>
+                        <div class="paczkomat-lockers">
+                            <div class="paczkomat-col">
+                                <span class="locker-door"></span>
+                                <span class="locker-door"></span>
+                                <span class="locker-door"></span>
+                            </div>
+                            <div class="paczkomat-col screen-col">
+                                <span class="locker-door"></span>
+                                <span class="paczkomat-screen" id="paczkomat-screen"></span>
+                                <span class="locker-door"></span>
+                            </div>
+                            <div class="paczkomat-col">
+                                <span class="locker-door"></span>
+                                <span class="locker-door"></span>
+                                <span class="locker-door"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Prosty busik kurierski z bi-truck kursujący lewo-prawo -->
+                    <div class="route-shuttle-bus" id="route-shuttle-bus">
+                        <div class="shuttle-bus-body">
+                            <i class="bi bi-truck text-primary shuttle-truck-icon"></i>
+                        </div>
+                    </div>
+
+                    <!-- 4. Paczki wpadające z magazynu do busa -->
+                    <div class="route-parcel parcel-load-1" id="parcel-load-1">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
+                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
+                        </svg>
+                    </div>
+                    <div class="route-parcel parcel-load-2" id="parcel-load-2">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
+                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
+                        </svg>
+                    </div>
+
+                    <!-- 5. Paczki wpadające z busa do paczkomatu -->
+                    <div class="route-parcel parcel-unload-1" id="parcel-unload-1">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
+                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
+                        </svg>
+                    </div>
+                    <div class="route-parcel parcel-unload-2" id="parcel-unload-2">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
+                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
+                        </svg>
+                    </div>
+
+                    <!-- 6. Warstwa na ruchomy dymek ze spalin -->
+                    <div class="smoke-layer" id="smoke-layer"></div>
+                </div>
+            </div>
+
+            <!-- PRZYPOMNIENIE O KOPII ZAPASOWEJ -->
+            <div id="export-reminder-card" class="export-reminder-card hidden shadow-sm mb-3">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="export-reminder-icon-box">
+                        <i class="bi bi-shield-lock-fill fs-3 text-info"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <strong class="fs-6 text-body">Czas na kopię zapasową</strong>
+                            <span class="badge bg-info-subtle text-info border border-info-subtle">30 dni minęło</span>
+                        </div>
+                        <p class="small text-secondary mb-0 lh-sm">
+                            Twoje dane tras są bezpieczne w pamięci przeglądarki, ale warto pobrać plik JSON na telefon lub komputer na wypadek wyczyszczenia pamięci urządzenia.
                         </p>
                     </div>
                 </div>
-                
-                <button id="btn-snooze-export" style="width: 100%; margin-top: 15px; background-color: #e0f2fe; color: #0284c7; border: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer;">
-                    Przypomnij mi za tydzień
-                </button>
+
+                <div class="d-flex gap-2 w-100">
+                    <button id="btn-export-reminder-now" class="btn btn-primary rounded-pill flex-grow-1 fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-1">
+                        <i class="bi bi-download"></i>
+                        <span>Pobierz kopię teraz</span>
+                    </button>
+                    <button id="btn-snooze-export" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold">
+                        <i class="bi bi-clock-history me-1"></i> Za 7 dni
+                    </button>
+                </div>
             </div>
 
-            <!-- CO NOWEGO -->
-            <div id="whats-new-card" class="rate-card hidden" style="margin-top: 25px; display: block; border-left: 4px solid var(--blue);">
-                <div style="font-weight: bold; margin-bottom: 10px; font-size: 16px;">
-                    Co nowego w apce?
+            <!-- CO NOWEGO W APCE -->
+            <div id="whats-new-card" class="whats-new-card hidden shadow-sm mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="whats-new-icon-box">
+                            <i class="bi bi-stars fs-4 text-warning"></i>
+                        </div>
+                        <div>
+                            <strong class="fs-6 text-body d-block">Co nowego w apce?</strong>
+                            <span class="small text-muted">Aktualizacja wersji 2.1</span>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary text-white rounded-pill px-2 py-1">v2.1</span>
                 </div>
-                <ul style="font-size: 14px; color: #666; padding-left: 20px; line-height: 1.6; margin: 0;">
-                    <li><strong>Soboty:</strong> <br>Obliczanie rzeczywistej stawki godzinowej za pracę w sobotę oraz poprawa zapisywania w historii czasu pracy</li>
-                    
-                </ul>
 
-                <hr class="soft-divider">
-                <button id="btn-hide-whats-new" class="btn-blue bold" style="display: block; margin: 0 auto; min-width: 120px; padding: 10px 0; border: 1px solid var(--blue);">OK</button>
+                <div class="whats-new-features-list mb-3">
+                    <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-truck text-primary fs-5 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong class="small d-block text-body">Animacja trasy kurierskiej</strong>
+                            <span class="small text-secondary">Ruchomy bus kursujący między magazynem a paczkomatem.</span>
+                        </div>
+                    </div>
+                    <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-shield-exclamation text-warning fs-5 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong class="small d-block text-body">Ochrona progu zarobkowego</strong>
+                            <span class="small text-secondary">Inteligentne ostrzeżenie przed zbyt wczesnym wylogowaniem i kalkulator zysku przed zakończeniem trasy.</span>
+                        </div>
+                    </div>
+                    <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
+                        <i class="bi bi-window-stack text-success fs-5 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong class="small d-block text-body">Nowoczesne okna i raporty</strong>
+                            <span class="small text-secondary">Pełne podglądy usuwania i importu danych JSON oraz eksport zestawień do pliku Excel.</span>
+                        </div>
+                    </div>
+                    <div class="whats-new-item d-flex align-items-start gap-2">
+                        <i class="bi bi-arrow-repeat text-info fs-5 mt-1 flex-shrink-0"></i>
+                        <div>
+                            <strong class="small d-block text-body">Automatyczne kopie zapasowe</strong>
+                            <span class="small text-secondary">Szybkie przypomnienia i pobieranie kopii zapasowej jednym kliknięciem.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-hide-whats-new" class="btn btn-primary rounded-pill w-100 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-1">
+                    <i class="bi bi-check-lg fs-5"></i>
+                    <span>Rozumiem, zaczynajmy!</span>
+                </button>
             </div>
         </section>
 
         <!-- WIDOK 2: ZESTAWIENIE -->
         <section id="view-reports" class="view hidden">
-            <h1>Zestawienie pracy</h1>
-            <br>
-            <button id="btn-add-session" class="btn-blue" style="width: 100%; margin-bottom: 20px; padding: 15px;">+ Dodaj nowy wpis</button>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="fs-4 fw-bold m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-journal-text text-primary"></i>
+                    <span>Zestawienie pracy</span>
+                </h2>
+            </div>
+            
+            <button id="btn-add-session" class="btn btn-primary w-100 py-3 rounded-4 shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2 mb-4">
+                <i class="bi bi-plus-circle-fill fs-5"></i>
+                <span>Dodaj nowy wpis</span>
+            </button>
+
             <div id="reports-list"></div>
         </section>
 
         <!-- WIDOK 3: EXCEL -->
         <section id="view-excel" class="view hidden">
-            <h1>Sprawdź rozliczenie</h1>
-            <br>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h2 class="fs-4 fw-bold m-0 d-flex align-items-center gap-2">
+                    <i class="bi bi-calculator-fill text-primary"></i>
+                    <span>Sprawdź rozliczenie</span>
+                </h2>
+            </div>
             
             <!-- Przyciski akcji -->
-            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
-                <button id="btn-manual-check" class="btn-blue" style="width: 100%; padding: 15px; font-size: 16px;">
-                    📝 Ręczne sprawdzenie (z tabletu)
+            <div class="d-flex flex-column gap-3 mb-4">
+                <button id="btn-manual-check" class="btn btn-primary w-100 py-3 rounded-4 shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
+                    <i class="bi bi-tablet-landscape-fill fs-5"></i>
+                    <span>Ręczne sprawdzenie (z tabletu)</span>
                 </button>
                 
-                <div class="file-upload-wrapper" style="margin-bottom: 0;">
-                    <label for="excel-upload" class="btn-secondary" style="text-align: center; margin-bottom: 0;">
-                        Wgraj plik rozliczeniowy (.xlsx)
+                <div class="file-upload-wrapper m-0">
+                    <label for="excel-upload" class="btn btn-success w-100 py-3 rounded-4 shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2 cursor-pointer m-0">
+                        <i class="bi bi-file-earmark-excel-fill fs-5"></i>
+                        <span>Wgraj plik rozliczeniowy (.xlsx)</span>
                     </label>
                     <input type="file" id="excel-upload" accept=".xlsx, .xls" class="hidden-input">
                 </div>
             </div>
             
             <div id="excel-results">
-                <!-- Stare wyniki Excela -->
+                <!-- Wyniki analizy Excela -->
             </div>
 
             <!-- Kontener na tabele z ręcznego sprawdzania -->
             <div id="manual-check-results"></div>
-
         </section>
 
         <!-- WIDOK 4: USTAWIENIA -->
         <section id="view-settings" class="view hidden">
-            <h1>Ustawienia</h1>
-            <br>
-            <div class="rate-card">
-                <div class="rate-info">
-                    <span>Stawka godzinowa</span>
-                    <strong id="current-rate-display">34 zł/h</strong>
+
+            <!-- SEKCJA 1: STAWKI I WYNAGRODZENIE -->
+            <div class="settings-section mb-4">
+                <div class="settings-section-title">
+                    <i class="bi bi-cash-stack text-primary"></i>
+                    <span>Stawki wynagrodzenia</span>
                 </div>
-                <button id="btn-change-rate" class="btn-blue">Zmień</button>
+
+                <!-- Stawka godzinowa -->
+                <div class="rate-card mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-cash-coin fs-4"></i>
+                        </div>
+                        <div class="rate-info">
+                            <span>Stawka godzinowa</span>
+                            <strong id="current-rate-display">34 zł/h</strong>
+                        </div>
+                    </div>
+                    <button id="btn-change-rate" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                        <i class="bi bi-pencil-fill me-1"></i> Zmień
+                    </button>
+                </div>
+
+                <!-- Stawka za soboty -->
+                <div class="rate-card mb-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-badge bg-warning-subtle text-warning">
+                            <i class="bi bi-calendar2-week fs-4"></i>
+                        </div>
+                        <div class="rate-info">
+                            <span>Stawka za soboty (stała)</span>
+                            <strong id="current-sat-rate-display">396 zł</strong>
+                        </div>
+                    </div>
+                    <button id="btn-change-sat-rate" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold">
+                        <i class="bi bi-pencil-fill me-1"></i> Zmień
+                    </button>
+                </div>
             </div>
 
-            <div class="rate-card">
-                <div class="rate-info">
-                    <span>Stawka za soboty (stała)</span>
-                    <strong id="current-sat-rate-display">396 zł</strong>
+            <!-- SEKCJA 2: PREFERENCJE APLIKACJI -->
+            <div class="settings-section mb-4">
+                <div class="settings-section-title">
+                    <i class="bi bi-palette2 text-info"></i>
+                    <span>Preferencje aplikacji</span>
                 </div>
-                <button id="btn-change-sat-rate" class="btn-blue">Zmień</button>
-            </div>
 
-            <div class="rate-card theme-setting-card">
-                <div class="rate-info">
-                    <span>Wygląd aplikacji</span>
-                    <strong>Ciemny motyw</strong>
+                <!-- Ciemny motyw -->
+                <div class="rate-card theme-setting-card mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-badge bg-info-subtle text-info">
+                            <i class="bi bi-moon-stars-fill fs-4"></i>
+                        </div>
+                        <div class="rate-info">
+                            <span>Wygląd aplikacji</span>
+                            <strong>Ciemny motyw</strong>
+                        </div>
+                    </div>
+                    <label class="theme-switch" aria-label="Ciemny motyw">
+                        <input type="checkbox" id="dark-mode-toggle">
+                        <span class="theme-switch-slider"></span>
+                    </label>
                 </div>
-                <label class="theme-switch" aria-label="Ciemny motyw">
-                    <input type="checkbox" id="dark-mode-toggle">
-                    <span class="theme-switch-slider"></span>
-                </label>
-            </div>
 
-            <div class="rate-card" style="display: flex; flex-direction: column; gap: 10px;">
-                <div style="text-align: center;">
-                    <span style="display: block; font-size: 0.85em; opacity: 0.8; margin-bottom: 5px;">Ostrzeganie przed zbyt wczesnym wylogowaniem</span>
-                    <strong id="current-early-warning-display" style="font-size: 1.4em;">5 min</strong>
-                </div>
-                
-                <div class="action-buttons-row" style="display: flex; gap: 10px; width: 100%; align-items: center; justify-content: center; height: 50px;">
-                    <button class="btn-warning-time" data-time="300000">5</button>
-                    <button class="btn-warning-time" data-time="600000">10</button>
-                    <button class="btn-warning-time" data-time="900000">15</button>
+                <!-- Ostrzeganie przed zbyt wczesnym wylogowaniem -->
+                <div class="rate-card flex-column text-start gap-3 mb-0">
+                    <div class="d-flex align-items-center justify-content-between w-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="modal-icon-badge bg-danger-subtle text-danger">
+                                <i class="bi bi-hourglass-split fs-4"></i>
+                            </div>
+                            <div class="rate-info">
+                                <span>Ostrzeganie o progu</span>
+                                <span class="small text-muted">Przed zakończeniem trasy</span>
+                            </div>
+                        </div>
+                        <span id="current-early-warning-display" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1 fs-6 fw-bold">
+                            5 min
+                        </span>
+                    </div>
+                    
+                    <div class="settings-segmented-control w-100" role="group" aria-label="Wybór progu ostrzegania">
+                        <button type="button" class="btn-warning-time" data-time="300000">5 min</button>
+                        <button type="button" class="btn-warning-time" data-time="600000">10 min</button>
+                        <button type="button" class="btn-warning-time" data-time="900000">15 min</button>
+                    </div>
                 </div>
             </div>
             
-            <div class="rate-card backup-card">
-                <div class="backup-header">
-                    <div class="backup-header-main">
-                        <div class="backup-icon">💾</div>
-                        <div>
-                            <span>Kopie zapasowe</span>
-                            <strong>Bezpieczny backup</strong>
+            <!-- SEKCJA 3: DANE I KOPIE ZAPASOWE -->
+            <div class="settings-section mb-4">
+                <div class="settings-section-title">
+                    <i class="bi bi-database-check text-success"></i>
+                    <span>Kopie zapasowe i eksport</span>
+                </div>
+
+                <div class="rate-card backup-card mb-0">
+                    <div class="d-flex align-items-center justify-content-between w-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="backup-icon">
+                                <i class="bi bi-shield-check fs-4"></i>
+                            </div>
+                            <div>
+                                <span class="small text-muted d-block text-uppercase fw-bold">Kopie zapasowe</span>
+                                <strong class="fs-5 text-body">Bezpieczny backup</strong>
+                            </div>
+                        </div>
+                        <span id="backup-badge" class="backup-badge alligned-center rounded-pill px-2 py-1 fw-bold fs-6">
+                            <i class="bi bi-hdd-fill me-1"></i> Lokalnie
+                        </span>
+                    </div>
+
+                    <!-- Kopia wewnętrzna urządzenia -->
+                    <div>
+                        <span class="small text-muted fw-semibold d-block mb-2">Pamięć wewnętrzna urządzenia:</span>
+                        <div class="d-flex gap-2 w-100">
+                            <button id="btn-backup-save" class="btn btn-primary rounded-3 flex-grow-1 fw-bold py-2 shadow-sm" type="button">
+                                <i class="bi bi-floppy2-fill me-1"></i> Zapisz kopię
+                            </button>
+                            <button id="btn-backup-restore" class="btn btn-outline-secondary rounded-3 flex-grow-1 fw-bold py-2" type="button">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Przywróć
+                            </button>
                         </div>
                     </div>
-                    <span id="backup-badge" class="backup-badge">Lokalnie</span>
-                </div>
 
-                <div class="backup-actions">
-                    <button id="btn-backup-save" class="btn-blue" type="button">Zapisz kopię</button>
-                    <button id="btn-backup-restore" class="btn-secondary" type="button">Przywróć ostatnią</button>
-                </div>
+                    <hr class="border-secondary-subtle my-1">
 
-                <div class="backup-divider" aria-hidden="true"></div>
+                    <!-- Pliki JSON -->
+                    <div>
+                        <span class="small text-muted fw-semibold d-block mb-2">Plik kopii zapasowej (JSON):</span>
+                        <div class="d-flex gap-2 w-100">
+                            <label for="btn-import" class="btn btn-outline-primary rounded-3 flex-grow-1 fw-bold py-2 cursor-pointer m-0 text-center">
+                                <i class="bi bi-upload me-1"></i> Import JSON
+                            </label>
+                            <input type="file" id="btn-import" accept=".json,application/json,text/json" class="hidden-input">
 
-                <div class="backup-advanced">
-                    <label for="btn-import" class="btn-blue">Importuj z pliku JSON</label>
-                    <input type="file" id="btn-import" accept=".json,application/json,text/json" class="hidden-input">
+                            <button id="btn-export" class="btn btn-outline-primary rounded-3 flex-grow-1 fw-bold py-2">
+                                <i class="bi bi-download me-1"></i> Pobierz JSON
+                            </button>
+                        </div>
+                    </div>
 
-                    <button id="btn-export" class="btn-blue">Pobierz JSON</button>
+                    <hr class="border-secondary-subtle my-1">
+
+                    <!-- Raporty Excel -->
+                    <div>
+                        <span class="small text-muted fw-semibold d-block mb-2">Zestawienie arkusza:</span>
+                        <button id="btn-export-excel" class="btn btn-success w-100 py-2 rounded-3 shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-file-earmark-excel-fill fs-5"></i>
+                            <span>Eksportuj raporty do Excela (.xlsx)</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <button id="btn-export-excel" class="btn-blue" style="width: 100%; background-color: #217346; padding: 15px; margin-bottom: 10px;">Eksportuj raporty do Excela</button>
-            <button id="btn-clear-data" class="btn-danger" style="width: 100%; padding: 15px;">Usuń wszystkie dane</button>
+            <!-- SEKCJA 4: O APLIKACJI -->
+            <div class="settings-section mb-4">
+                <div class="settings-section-title">
+                    <i class="bi bi-info-circle text-primary"></i>
+                    <span>O aplikacji</span>
+                </div>
+
+                <button id="btn-reopen-whats-new" class="rate-card settings-action-card w-100 text-start d-flex align-items-center justify-content-between p-3 mb-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="modal-icon-badge bg-warning-subtle text-warning">
+                            <i class="bi bi-stars fs-4"></i>
+                        </div>
+                        <div>
+                            <strong class="text-body d-block fs-6">Co nowego w aplikacji?</strong>
+                            <span class="small text-muted">Kliknij tutaj, żeby zobaczyć listę nowych funkcji</span>
+                        </div>
+                    </div>
+                    <i class="bi bi-chevron-right text-muted fs-5"></i>
+                </button>
+            </div>
+
+            <!-- SEKCJA 5: STREFA NIEBEZPIECZNA -->
+            <div class="settings-section mb-4">
+                <div class="settings-section-title text-danger">
+                    <i class="bi bi-exclamation-octagon text-danger"></i>
+                    <span>Strefa niebezpieczna</span>
+                </div>
+
+                <div class="settings-danger-card p-3 rounded-4 mb-0">
+                    <div class="d-flex align-items-start gap-2 mb-3">
+                        <i class="bi bi-shield-slash-fill text-danger fs-5 mt-1 flex-shrink-0"></i>
+                        <p class="small text-secondary mb-0 lh-sm">
+                            Usunięcie wszystkich danych trwale kasuje historię tras, stawki i ustawienia z pamięci urządzenia.
+                        </p>
+                    </div>
+
+                    <button id="btn-clear-data" class="btn btn-danger text-white w-100 py-3 rounded-4 shadow-sm fw-bold d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-trash3-fill fs-5"></i>
+                        <span>Usuń wszystkie dane</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STOPKA SYSTEMOWA -->
+            <div class="text-center py-2 mb-4 text-muted small">
+                <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                    <i class="bi bi-truck text-primary fs-6"></i>
+                    <strong class="text-body">Express Tracker PWA</strong>
+                    <span class="badge bg-secondary-subtle text-secondary px-2 py-0 sw-version-badge" id="app-footer-version">VERSION</span>
+                </div>
+                <div class="text-secondary" style="font-size: 0.75rem;">
+                    Działa w 100% offline • Dane przechowywane w pamięci urządzenia
+                </div>
+            </div>
         </section>
 
         <!-- KARTA INSTALACJI PWA -->
-        <div id="install-pwa-card" class="hidden" style="position: fixed; bottom: 85px; left: 5%; width: 90%; z-index: 1000; border: 2px solid var(--blue); box-shadow: var(--shadow-modal); background: white; border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 15px; box-sizing: border-box; animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;">
-            
-            <div style="display: flex; gap: 15px; align-items: flex-start;">
-                <span style="font-size: 32px; flex-shrink: 0; line-height: 1;">📲</span>
+        <div id="install-pwa-card" class="rate-card hidden shadow-lg border-primary mb-3 pwa-install-banner" style="display: none;">
+            <div class="d-flex gap-3 align-items-start mb-3">
+                <span class="fs-1 text-primary"><i class="bi bi-phone-vibrate-fill" id="pwa-install-icon"></i></span>
                 <div>
-                    <strong style="font-size: 16px; color: var(--text); display: block; margin-bottom: 4px;">Zainstaluj aplikację</strong>
-                    <p style="font-size: 13px; color: var(--text-muted); margin: 0; line-height: 1.4;">Dodaj Express Tracker do ekranu głównego, aby działał offline jako pełnoprawna aplikacja.</p>
+                    <strong class="fs-6 text-body d-block mb-1" id="pwa-install-title">Zainstaluj aplikację</strong>
+                    <p class="small text-muted m-0" id="pwa-install-desc">Dodaj Express Tracker do ekranu głównego, aby działał offline jako pełnoprawna aplikacja.</p>
                 </div>
             </div>
 
-            <div style="display: flex; gap: 10px; width: 100%;">
-                <button id="btn-install-pwa" class="btn-blue" style="flex: 1; margin: 0;">Zainstaluj</button>
-                <button id="btn-close-pwa" class="btn-secondary" style="flex: 1; margin: 0;">Później</button>
+            <div class="d-flex gap-2 w-100" id="pwa-install-actions">
+                <button id="btn-install-pwa" class="btn btn-primary rounded-pill flex-grow-1 fw-bold">
+                    <i class="bi bi-download me-1"></i> Zainstaluj
+                </button>
+                <button id="btn-close-pwa" class="btn btn-outline-secondary rounded-pill flex-grow-1 fw-bold">
+                    Później
+                </button>
             </div>
-            
         </div>
 
-    <!-- DOLNY NAV BAR -->
+    </main>
+
+    <!-- DOLNY NAV BAR (BOOTSTRAP ICONS) -->
     <nav class="bottom-nav">
-        <button class="nav-item active" data-target="view-tracker">🕒 Praca</button>
-        <button class="nav-item" data-target="view-reports">📋 Historia</button>
-        <button class="nav-item" data-target="view-excel">📊 Rozliczenie</button>
-        <button class="nav-item" data-target="view-settings">⚙️ Opcje</button>
+        <button class="nav-item active" data-target="view-tracker">
+            <i class="bi bi-stopwatch"></i>
+            <span>Praca</span>
+        </button>
+        <button class="nav-item" data-target="view-reports">
+            <i class="bi bi-journal-text"></i>
+            <span>Historia</span>
+        </button>
+        <button class="nav-item" data-target="view-excel">
+            <i class="bi bi-file-earmark-spreadsheet"></i>
+            <span>Rozliczenie</span>
+        </button>
+        <button class="nav-item" data-target="view-settings">
+            <i class="bi bi-gear-fill"></i>
+            <span>Opcje</span>
+        </button>
     </nav>
 
-    <!-- OKNO MODALNE -->
-     <div id="custom-modal-overlay" class="modal-overlay hidden">
-        <div class="modal-box">
-            <h3 id="modal-title">Tytuł</h3>
-            <p id="modal-message" class="hidden"></p>
-            <input type="text" id="modal-input" class="hidden" placeholder="Wprowadź wartość">
-
-            <div class="modal-actions">
-                <button id="modal-btn-confirm" class="btn-blue">Zatwierdź</button>
-                <button id="modal-btn-cancel" class="btn-secondary">Anuluj</button>
+    <!-- =========================================
+         BOOTSTRAP MODAL 1: GŁÓWNY (ALERT, PROMPT, CONFIRM)
+         ========================================= -->
+    <div class="modal fade" id="appModal" tabindex="-1" aria-labelledby="appModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span id="appModalIcon" class="modal-icon-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-info-circle-fill fs-4"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0" id="appModalLabel">Tytuł</h5>
+                            <span class="small text-muted" id="appModalSubtitle">Komunikat aplikacji</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="appModalBtnClose"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div id="appModalMessage" class="modal-text mb-0 text-secondary fs-6 lh-base"></div>
+                    <div id="appModalInputWrapper" class="mt-3 d-none">
+                        <label id="appModalInputLabel" class="form-label small fw-bold text-muted mb-2 d-none"></label>
+                        <input type="text" id="appModalInput" class="form-control form-control-lg text-center rounded-3 shadow-none border-2 fw-bold" placeholder="Wprowadź wartość">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="appModalBtnCancel" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Anuluj
+                    </button>
+                    <button type="button" id="appModalBtnConfirm" class="btn btn-primary rounded-pill px-4 flex-grow-1 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Zatwierdź
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-    
-    <!-- DEDYKOWANE OKNO MODALNE DO SPRAWDZANIA Z TABLETEM -->
-    <div id="manual-check-modal-overlay" class="modal-overlay hidden" style="z-index: 100000;">
-        <div class="modal-box" id="manual-check-modal-box">
-            <h3 id="manual-check-title" style="margin-top: 0; margin-bottom: 12px; font-size: 20px; font-weight: 800; color: var(--text);"></h3>
-            
-            <div id="manual-check-message" style="font-size: 15px; color: var(--text-muted); margin-bottom: 20px;"></div>
 
-            <input type="tel" id="manual-check-input" style="width: 100%; box-sizing: border-box; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 24px; font-weight: bold; color: var(--text); background: white; text-align: center; outline: none; margin-bottom: 10px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-            
-            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px;">
-                <button id="manual-check-btn-confirm" class="btn-blue" style="flex: 1; margin: 0;">Zatwierdź</button>
-                <button id="manual-check-btn-cancel" class="btn-secondary" style="flex: 1; margin: 0;">Przerwij</button>
+    <!-- =========================================
+         BOOTSTRAP MODAL 2: NOWY / EDYCJA WPISU (SESJI)
+         ========================================= -->
+    <div class="modal fade" id="sessionModal" tabindex="-1" aria-labelledby="sessionModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-1">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-primary-subtle text-primary" id="sessionModalIconBadge">
+                            <i class="bi bi-calendar-plus-fill fs-4" id="sessionModalIcon"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0" id="sessionModalLabel">Nowy dzień pracy</h5>
+                            <span class="small text-muted" id="sessionModalSubtitle">Wprowadź godziny i sprawdź wyliczenie</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="sessionModalBtnClose"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <!-- Wybór daty -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="sessionModalDate" class="form-label small fw-bold text-muted mb-0">
+                                <i class="bi bi-calendar3 me-1 text-primary"></i> Data pracy:
+                            </label>
+                            <div class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 fw-bold" id="btn-session-today" style="font-size: 11px;">Dzisiaj</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-2 py-0 fw-bold" id="btn-session-yesterday" style="font-size: 11px;">Wczoraj</button>
+                            </div>
+                        </div>
+                        <input type="date" id="sessionModalDate" class="form-control form-control-lg fw-semibold">
+                    </div>
+
+                    <!-- Wybór godzin (Od - Do) -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label for="sessionModalStart" class="form-label small fw-bold text-muted mb-1">
+                                <i class="bi bi-play-circle me-1 text-primary"></i> Start:
+                            </label>
+                            <input type="time" id="sessionModalStart" class="form-control form-control-lg fw-bold text-center" value="08:00">
+                        </div>
+                        <div class="col-6">
+                            <label for="sessionModalEnd" class="form-label small fw-bold text-muted mb-1">
+                                <i class="bi bi-stop-circle me-1 text-primary"></i> Koniec:
+                            </label>
+                            <input type="time" id="sessionModalEnd" class="form-control form-control-lg fw-bold text-center" value="16:00">
+                        </div>
+                    </div>
+
+                    <!-- Karta kalkulacji na żywo -->
+                    <div class="session-calc-card p-3 rounded-4 mb-1">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted fw-semibold">
+                                <i class="bi bi-clock-history me-1 text-primary"></i> Zaliczone godziny:
+                            </span>
+                            <strong id="sessionModalHoursDisplay" class="text-body fs-5 fw-bold">8.0 h</strong>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label for="sessionModalEarnedInput" class="small text-muted fw-semibold mb-0">
+                                <i class="bi bi-wallet2 me-1 text-success"></i> Zarobek:
+                            </label>
+                            <div class="input-group input-group-sm" style="max-width: 150px;">
+                                <input type="number" step="0.01" id="sessionModalEarnedInput" class="form-control text-center fw-bold fs-5 text-success rounded-start-3" placeholder="0.00">
+                                <span class="input-group-text fw-bold text-success rounded-end-3">zł</span>
+                            </div>
+                        </div>
+                        <div id="sessionModalSatBadge" class="d-none mt-2 text-center">
+                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle py-1 px-2">
+                                <i class="bi bi-calendar2-week me-1"></i> Sobota (stała stawka)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="sessionModalBtnCancel" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Anuluj
+                    </button>
+                    <button type="button" id="sessionModalBtnConfirm" class="btn btn-primary rounded-pill px-4 flex-grow-1 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> <span id="sessionModalBtnConfirmText">Zapisz dzień</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- import/export w JS -->
+    <!-- =========================================
+         BOOTSTRAP MODAL: SUKCES / PODSUMOWANIE (DODANO WPIS)
+         ========================================= -->
+    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg text-center p-4">
+                <div class="modal-body p-1">
+                    <!-- Hero animated badge with halo ring -->
+                    <div class="success-hero-badge-wrap mb-3">
+                        <div class="success-hero-halo">
+                            <div class="success-hero-badge" id="successModalBadge">
+                                <i class="bi bi-check-lg" id="successModalIcon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Title & Subtitle -->
+                    <h3 class="fw-bolder mb-1 text-body tracking-tight" id="successModalTitle">Dodano wpis</h3>
+                    <p class="text-secondary small mb-3 px-2" id="successModalMessage">Pomyślnie dodano nowy dzień pracy do historii.</p>
+
+                    <!-- Stats Card (Hours & Earnings) -->
+                    <div class="success-stats-box p-3 rounded-4 mb-4 text-center" id="successModalStatsCard">
+                        <div class="d-flex align-items-center justify-content-center gap-1 mb-2">
+                            <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1 small fw-semibold">
+                                <i class="bi bi-check2-circle me-1"></i> Zapisano w historii
+                            </span>
+                        </div>
+                        <div class="row g-2 align-items-stretch">
+                            <div class="col-6">
+                                <div class="stat-pill-card p-3 rounded-4 h-100 d-flex flex-column justify-content-center">
+                                    <span class="stat-pill-label text-muted small fw-bold text-uppercase d-block mb-1">
+                                        <i class="bi bi-clock-history text-primary me-1"></i> Czas pracy
+                                    </span>
+                                    <strong class="fs-3 text-body fw-bolder" id="successModalHours">8.0 h</strong>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-pill-card p-3 rounded-4 h-100 d-flex flex-column justify-content-center">
+                                    <span class="stat-pill-label text-muted small fw-bold text-uppercase d-block mb-1">
+                                        <i class="bi bi-wallet2 text-success me-1"></i> Zarobek
+                                    </span>
+                                    <strong class="fs-3 text-success fw-bolder" id="successModalEarned">272.00 zł</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Button -->
+                    <button type="button" id="successModalBtnConfirm" class="btn btn-primary btn-success-modal-confirm w-100 py-3 rounded-pill fw-bold shadow">
+                        <span class="d-flex align-items-center justify-content-center gap-2">
+                            <span id="successModalBtnText">Gotowe</span>
+                            <i class="bi bi-arrow-right-short fs-4"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         BOOTSTRAP MODAL: POTWIERDZENIE USUNIĘCIA (DANGER CONFIRM)
+         ========================================= -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-1">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-danger-subtle text-danger" id="deleteConfirmModalIconBadge">
+                            <i class="bi bi-trash3-fill fs-4" id="deleteConfirmModalIcon"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0 text-danger" id="deleteConfirmModalLabel">Usuń wpis</h5>
+                            <span class="small text-muted" id="deleteConfirmModalSubtitle">Tej operacji nie można cofnąć</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="deleteConfirmModalBtnClose"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <div id="deleteConfirmModalDetails"></div>
+                </div>
+
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="deleteConfirmModalBtnCancel" class="btn btn-outline-secondary rounded-pill px-4 flex-grow-1 fw-bold" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Anuluj
+                    </button>
+                    <button type="button" id="deleteConfirmModalBtnConfirm" class="btn btn-danger text-white rounded-pill px-4 flex-grow-1 shadow-sm fw-bold">
+                        <i class="bi bi-trash3-fill me-1"></i> <span id="deleteConfirmModalBtnText">Usuń</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         BOOTSTRAP MODAL: IMPORT DANYCH (IMPORT CONFIRM)
+         ========================================= -->
+    <div class="modal fade" id="importConfirmModal" tabindex="-1" aria-labelledby="importConfirmModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-1">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-primary-subtle text-primary" id="importConfirmModalIconBadge">
+                            <i class="bi bi-cloud-arrow-up-fill fs-4" id="importConfirmModalIcon"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0 text-primary" id="importConfirmModalLabel">Import danych</h5>
+                            <span class="small text-muted" id="importConfirmModalSubtitle">Weryfikacja zawartości kopii zapasowej</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="importConfirmModalBtnClose"></button>
+                </div>
+
+                <div class="modal-body py-3">
+                    <div id="importConfirmModalDetails"></div>
+                </div>
+
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="importConfirmModalBtnCancel" class="btn btn-outline-secondary rounded-pill px-4 flex-grow-1 fw-bold" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Anuluj
+                    </button>
+                    <button type="button" id="importConfirmModalBtnConfirm" class="btn btn-primary rounded-pill px-4 flex-grow-1 shadow fw-bold">
+                        <i class="bi bi-cloud-arrow-up-fill me-1"></i> <span id="importConfirmModalBtnText">Zaimportuj dane</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         BOOTSTRAP MODAL 3: SPRAWDZANIE Z TABLETEM
+         ========================================= -->
+    <div class="modal fade" id="manualCheckModal" tabindex="-1" aria-labelledby="manualCheckModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg" id="manualCheckModalBox">
+                <div class="modal-header border-0 pb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-tablet-landscape-fill fs-4"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0" id="manualCheckModalLabel">Dzień 1</h5>
+                            <span class="small text-muted">Sprawdzanie z tabletem</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="manualCheckBtnClose"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div id="manualCheckMessage" class="p-3 rounded-4 bg-body-tertiary border mb-3 text-center fs-6"></div>
+                    <div class="input-group input-group-lg shadow-sm">
+                        <input type="tel" id="manualCheckInput" class="form-control text-center fw-bold fs-2 rounded-start-3 border-2" placeholder="0.00">
+                        <span class="input-group-text fw-bold fs-5 bg-body-tertiary rounded-end-3">zł</span>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="manualCheckBtnCancel" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Przerwij
+                    </button>
+                    <button type="button" id="manualCheckBtnConfirm" class="btn btn-primary rounded-pill px-4 flex-grow-1 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Zatwierdź
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================
+         BOOTSTRAP MODAL 4: WYBÓR MIESIĄCA
+         ========================================= -->
+    <div class="modal fade" id="monthSelectModal" tabindex="-1" aria-labelledby="monthSelectModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-calendar-month-fill fs-4"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0" id="monthSelectModalLabel">Wybierz miesiąc</h5>
+                            <span class="small text-muted">Rozliczenie tras</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="monthSelectBtnClose"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <p class="modal-text mb-3 text-secondary">Dla jakiego miesiąca chcesz sprawdzić zarobki z tabletu?</p>
+                    <select id="monthSelectInput" class="form-select form-select-lg fw-semibold rounded-3 shadow-sm border-2"></select>
+                </div>
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="monthSelectBtnCancel" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Anuluj
+                    </button>
+                    <button type="button" id="monthSelectBtnConfirm" class="btn btn-primary rounded-pill px-4 flex-grow-1 shadow-sm">
+                        <i class="bi bi-check-lg me-1"></i> Zatwierdź
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5.3.3 Bundle JS (includes Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Główny skrypt aplikacji -->
     <script type="module" src="js/app.js"></script>
 
-    <!-- Service Worker Check -->
+    <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=4')
+                navigator.serviceWorker.register('./sw.js?v=2.1.9')
                     .then((registration) => {
-                        // console.log('PWA: Service Worker zarejestrowany pomyślnie!', registration.scope);
+                        // Service Worker zarejestrowany pomyślnie
                     })
                     .catch((error) => {
                         console.log('PWA: Błąd rejestracji Service Workera:', error);

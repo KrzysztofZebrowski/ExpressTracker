@@ -1,4 +1,4 @@
-const VERSION = '1.4.1';
+const VERSION = '2.0.0';
 
 const CACHE_NAME = `expresstracker-v${VERSION}`; 
 
@@ -73,4 +73,15 @@ self.addEventListener('fetch', (event) => {
             });
         })
     );
+});
+
+// Obsługa zapytań o wersję z poziomu aplikacji
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'GET_VERSION') {
+        if (event.ports && event.ports[0]) {
+            event.ports[0].postMessage({ version: VERSION });
+        } else if (event.source) {
+            event.source.postMessage({ type: 'VERSION', version: VERSION });
+        }
+    }
 });
