@@ -18,6 +18,21 @@
     <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
 
+    <!-- Early PWA Install Prompt Capture & Standalone Detection -->
+    <script>
+        window.deferredPrompt = null;
+        try {
+            if (window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches) {
+                document.documentElement.classList.add('is-pwa-standalone');
+            }
+        } catch (e) {}
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.deferredPrompt = e;
+            window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+        });
+    </script>
+
     <!-- Theme Initialization -->
     <script>
         try {
@@ -259,10 +274,10 @@
                         </div>
                         <div>
                             <strong class="fs-6 text-body d-block">Co nowego w apce?</strong>
-                            <span class="small text-muted">Aktualizacja wersji 2.1</span>
+                            <span class="small text-muted">Aktualizacja wersji</span>
                         </div>
                     </div>
-                    <span class="badge bg-primary text-white rounded-pill px-2 py-1">v2.1</span>
+                    <span id="app-footer-version" class="badge bg-primary text-white rounded-pill px-2 py-1"></span>
                 </div>
 
                 <div class="whats-new-features-list mb-3">
@@ -519,7 +534,7 @@
                 </div>
 
                 <!-- Przycisk instalacji PWA w opcjach (widoczny tylko gdy PWA nie jest zainstalowane) -->
-                <button id="btn-settings-install-pwa" type="button" class="rate-card settings-action-card w-100 text-start d-flex align-items-center justify-content-between p-3 mb-3 hidden" style="display: none;">
+                <button id="btn-settings-install-pwa" type="button" class="rate-card settings-action-card w-100 text-start d-flex align-items-center justify-content-between p-3 mb-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="modal-icon-badge bg-primary-subtle text-primary">
                             <i class="bi bi-download fs-4" id="settings-install-icon"></i>
@@ -575,7 +590,7 @@
                 <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
                     <i class="bi bi-truck text-primary fs-6"></i>
                     <strong class="text-body">Express Tracker PWA</strong>
-                    <span class="badge bg-secondary-subtle text-secondary px-2 py-0 sw-version-badge" id="app-footer-version">VERSION</span>
+                    <span class="badge bg-secondary-subtle text-secondary px-2 py-0 sw-version-badge" id="app-footer-version"></span>
                 </div>
                 <div class="text-secondary" style="font-size: 0.75rem;">
                     Działa w 100% offline • Dane przechowywane w pamięci urządzenia
@@ -960,7 +975,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=2.1.9')
+                navigator.serviceWorker.register('./sw.js?v=2.2.0')
                     .then((registration) => {
                         // Service Worker zarejestrowany pomyślnie
                     })

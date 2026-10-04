@@ -1928,3 +1928,18 @@ button:active:not(.nav-item), .btn:active {
         opacity: 0;
     }
 }
+
+/* =========================================
+   PWA INSTALLATION VISIBILITY
+   ========================================= */
+@media (display-mode: standalone), (display-mode: window-controls-overlay), (display-mode: fullscreen) {
+    #btn-settings-install-pwa,
+    #install-pwa-card {
+        display: none !important;
+    }
+}
+
+.is-pwa-standalone #btn-settings-install-pwa,
+.is-pwa-standalone #install-pwa-card {
+    display: none !important;
+}

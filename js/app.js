@@ -148,17 +148,19 @@ if (document.readyState === 'loading') {
 /* =========================================
    OBSŁUGA INSTALACJI PWA
 ========================================= */
-let deferredPrompt;
+let deferredPrompt = window.deferredPrompt || null;
 const installCard = document.getElementById('install-pwa-card');
 const btnInstall = document.getElementById('btn-install-pwa');
 const btnClose = document.getElementById('btn-close-pwa');
 const btnSettingsInstall = document.getElementById('btn-settings-install-pwa');
 
 // Wykrywanie iOS (iPhone / iPad) oraz trybu Standalone
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isIOS = (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
 
 function isAppInstalled() {
-    return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    return window.navigator.standalone === true || 
+           window.matchMedia('(display-mode: standalone)').matches || 
+           document.documentElement.classList.contains('is-pwa-standalone');
 }
 
 function updateInstallPromptsVisibility() {
@@ -166,7 +168,6 @@ function updateInstallPromptsVisibility() {
 
     if (installed) {
         if (btnSettingsInstall) {
-            btnSettingsInstall.classList.add('hidden');
             btnSettingsInstall.style.display = 'none';
         }
         if (installCard) {
@@ -178,7 +179,6 @@ function updateInstallPromptsVisibility() {
 
     // Jeśli aplikacja NIE jest zainstalowana, przycisk w Opcjach jest widoczny
     if (btnSettingsInstall) {
-        btnSettingsInstall.classList.remove('hidden');
         btnSettingsInstall.style.display = 'flex';
 
         if (isIOS) {
@@ -199,10 +199,14 @@ try {
     window.matchMedia('(display-mode: standalone)').addEventListener('change', updateInstallPromptsVisibility);
 } catch (e) {}
 
-// Nasłuchiwanie na event systemowy (Android / Chrome)
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
+// Obsługa gotowości zdarzenia systemowego (Android / Chrome)
+function onPromptReady(e) {
+    if (e && e.prompt) {
+        window.deferredPrompt = e;
+        deferredPrompt = e;
+    } else if (window.deferredPrompt) {
+        deferredPrompt = window.deferredPrompt;
+    }
     updateInstallPromptsVisibility();
 
     setTimeout(() => {
@@ -211,12 +215,27 @@ window.addEventListener('beforeinstallprompt', (e) => {
             installCard.style.display = 'flex';
         }
     }, 2000);
+}
+
+window.addEventListener('pwa-prompt-ready', onPromptReady);
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    deferredPrompt = e;
+    onPromptReady(e);
 });
+
+// Jeśli zdarzenie zostało przechwycone zanim moduł app.js wystartował:
+if (window.deferredPrompt) {
+    onPromptReady(window.deferredPrompt);
+}
 
 // Zdarzenie po pomyślnej instalacji
 window.addEventListener('appinstalled', () => {
     console.log('PWA: Aplikacja została zainstalowana.');
+    window.deferredPrompt = null;
     deferredPrompt = null;
+    document.documentElement.classList.add('is-pwa-standalone');
     updateInstallPromptsVisibility();
 });
 
@@ -258,52 +277,62 @@ if (isIOS && !isAppInstalled() && installCard) {
     }
 }
 
-if (btnInstall) {
-    btnInstall.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Decyzja o instalacji PWA: ${outcome}`);
-            
-            deferredPrompt = null;
-            installCard.classList.add('hidden');
-            installCard.style.display = 'none';
-            if (outcome === 'accepted') {
+/**
+ * Bezpośrednie wywołanie okna systemowego instalacji PWA
+ */
+async function triggerPwaInstall() {
+    const promptEvent = window.deferredPrompt || deferredPrompt;
+
+    if (promptEvent) {
+        try {
+            // Natychmiastowe otwarcie okna systemowego (bezpośrednio w geście użytkownika)
+            promptEvent.prompt();
+            if (installCard) {
+                installCard.classList.add('hidden');
+                installCard.style.display = 'none';
+            }
+            const choice = await promptEvent.userChoice;
+            console.log(`PWA: Decyzja o instalacji: ${choice ? choice.outcome : 'unknown'}`);
+            if (choice && choice.outcome === 'accepted') {
+                window.deferredPrompt = null;
+                deferredPrompt = null;
                 updateInstallPromptsVisibility();
             }
+        } catch (err) {
+            console.error('Błąd podczas wywołania prompt():', err);
         }
-    });
+        return;
+    }
+
+    if (isIOS) {
+        await showAlert(
+            'Instalacja na iPhone / iPad',
+            'Aby zainstalować aplikację na iPhone:<br><br>1. Dotknij ikony <b>Udostępnij</b> <i class="bi bi-box-arrow-up text-primary fs-5"></i> na dolnym pasku Safari.<br>2. Przewiń listę w dół i wybierz <b>Do ekranu początkowego</b> <i class="bi bi-plus-square text-primary fs-5"></i>.<br>3. Dotknij <b>Dodaj</b> w prawym górnym rogu.<br><br>Aplikacja pojawi się na pulpicie i będzie działać w 100% offline!'
+        );
+        return;
+    }
+
+    // Jeśli prompt nie jest jeszcze gotowy (np. kliknięto natychmiast po załadowaniu strony)
+    await showAlert(
+        'Instalacja aplikacji',
+        'Aby zainstalować Express Tracker na telefonie:<br><br>Kliknij ikonę menu przeglądarki (<i class="bi bi-three-dots-vertical"></i>) w prawym górnym rogu i wybierz <b>Zainstaluj aplikację</b> lub <b>Dodaj do ekranu głównego</b>.'
+    );
+}
+
+if (btnInstall) {
+    btnInstall.addEventListener('click', triggerPwaInstall);
 }
 
 if (btnSettingsInstall) {
-    btnSettingsInstall.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            console.log(`Decyzja o instalacji PWA z Opcji: ${outcome}`);
-            deferredPrompt = null;
-            if (outcome === 'accepted') {
-                updateInstallPromptsVisibility();
-            }
-        } else if (isIOS) {
-            await showAlert(
-                'Instalacja na iPhone / iPad',
-                'Aby zainstalować aplikację na iPhone:<br><br>1. Dotknij ikony <b>Udostępnij</b> <i class="bi bi-box-arrow-up text-primary fs-5"></i> na dolnym pasku Safari.<br>2. Przewiń listę w dół i wybierz <b>Do ekranu początkowego</b> <i class="bi bi-plus-square text-primary fs-5"></i>.<br>3. Dotknij <b>Dodaj</b> w prawym górnym rogu.<br><br>Aplikacja pojawi się na pulpicie i będzie działać w 100% offline!'
-            );
-        } else {
-            await showAlert(
-                'Instalacja aplikacji',
-                'Aby zainstalować Express Tracker na komputerze lub telefonie:<br><br>Kliknij ikonę instalacji na pasku adresu przeglądarki (lub w menu przeglądarki wybierz: <b>Zainstaluj aplikację</b>).'
-            );
-        }
-    });
+    btnSettingsInstall.addEventListener('click', triggerPwaInstall);
 }
 
 if (btnClose) {
     btnClose.addEventListener('click', () => {
-        installCard.classList.add('hidden');
-        installCard.style.display = 'none';
+        if (installCard) {
+            installCard.classList.add('hidden');
+            installCard.style.display = 'none';
+        }
         localStorage.setItem('pwa_install_dismissed', 'true');
     });
 }
