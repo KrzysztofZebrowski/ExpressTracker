@@ -35,6 +35,7 @@ export function initZebra() {
 
     const zebraModalEl = document.getElementById('zebraLoginModal');
     const dataWedgeModalEl = document.getElementById('dataWedgeModal');
+    const btnOpenZebraModal = document.getElementById('btn-open-zebra-modal');
     const btnOpenDataWedge = document.getElementById('btn-open-datawedge-instruction');
     const btnBackToQr = document.getElementById('btn-back-to-qr');
 
@@ -121,9 +122,32 @@ export function initZebra() {
         }
     });
 
-    // 5. Nawigacja między modalem QR a instrukcją DataWedge
+    // 5. Nawigacja i otwieranie modali: QR oraz instrukcji DataWedge
+    if (btnOpenZebraModal) {
+        btnOpenZebraModal.addEventListener('click', () => {
+            const hasSelectedRoute = Boolean(selectLogin.value && selectLogin.value.trim() !== '');
+            if (!hasSelectedRoute) {
+                // Przed pierwszym użyciem żadna trasa nie jest wybrana -> automatycznie uruchom instrukcję
+                if (btnBackToQr) {
+                    const btnLabel = btnBackToQr.querySelector('span');
+                    if (btnLabel) btnLabel.textContent = 'Przejdź do generatora QR';
+                }
+                const bsDataWedge = window.bootstrap?.Modal.getOrCreateInstance(dataWedgeModalEl);
+                bsDataWedge?.show();
+            } else {
+                // Trasa jest wybrana -> bezpośrednio otwórz modal z kodem QR
+                const bsZebra = window.bootstrap?.Modal.getOrCreateInstance(zebraModalEl);
+                bsZebra?.show();
+            }
+        });
+    }
+
     if (btnOpenDataWedge && zebraModalEl && dataWedgeModalEl) {
         btnOpenDataWedge.addEventListener('click', () => {
+            if (btnBackToQr) {
+                const btnLabel = btnBackToQr.querySelector('span');
+                if (btnLabel) btnLabel.textContent = 'Wróć do generatora QR';
+            }
             const bsZebra = window.bootstrap?.Modal.getInstance(zebraModalEl);
             const bsDataWedge = window.bootstrap?.Modal.getOrCreateInstance(dataWedgeModalEl);
 
