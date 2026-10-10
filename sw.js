@@ -1,4 +1,4 @@
-const VERSION = '2.2.0';
+const VERSION = '2.2.1';
 
 const CACHE_NAME = `expresstracker-v${VERSION}`; 
 
@@ -12,6 +12,8 @@ const ASSETS_TO_CACHE = [
     './js/settings.js',
     './js/reports.js',
     './js/excel.js',
+    './js/qrcode.js',
+    './js/zebra.js',
     './manifest.json',
     './icon.png'
 ];

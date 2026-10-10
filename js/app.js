@@ -5,6 +5,7 @@ import { initSettings } from './settings.js';
 import { renderReports } from './reports.js';
 import { initExcel } from './excel.js';
 import { showAlert } from './modal.js';
+import { initZebra } from './zebra.js';
 
 // Pobieranie elementu badge'a, aby modyfikować jego tekst i klasy.
     const networkBadge = document.getElementById('network-badge');
@@ -84,6 +85,7 @@ function initApp() {
     initTracker();
     initSettings();
     initExcel();
+    initZebra();
     requestPersistentStorage();
     loadAppVersionFromSW();
 }

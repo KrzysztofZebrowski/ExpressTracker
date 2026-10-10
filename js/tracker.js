@@ -5,9 +5,6 @@ let intervalId = null;
 let startTime = null;
 let lastEarningsUpdate = 0;
 let cachedSettings = null;
-let cruisingSmokeInterval = null;
-let routeStatusInterval = null;
-let routeCycleStart = 0;
 
 let btnToggle, timeDisplay, earningsDisplay, dateDisplay, startTimeDisplay, btnEditStart;
 
@@ -203,7 +200,7 @@ async function stopWork() {
             );
 
             if (!confirmed) {
-                // Anulowano zakończenie trasy - licznik i animacja pracują bez zmian!
+                // Anulowano zakończenie trasy - licznik pracuje bez zmian!
                 return;
             }
         }
@@ -211,7 +208,6 @@ async function stopWork() {
 
     clearInterval(intervalId);
     intervalId = null;
-    stopCruisingRouteAnimation();
 
     let endObj = new Date();
     const startObj = new Date(startTime);
@@ -285,105 +281,6 @@ async function stopWork() {
     });
 }
 
-
-function spawnCruisingSmokePuff() {
-    const scene = document.getElementById('active-route-scene');
-    if (!scene || scene.classList.contains('d-none')) return;
-
-    const smokeLayer = document.getElementById('smoke-layer');
-    const shuttleBus = document.getElementById('route-shuttle-bus');
-    const stage = document.getElementById('route-stage');
-    if (!smokeLayer || !shuttleBus || !stage) return;
-
-    const stageRect = stage.getBoundingClientRect();
-    const busRect = shuttleBus.getBoundingClientRect();
-    if (stageRect.width === 0 || busRect.width === 0) return;
-
-    // Sprawdź czy bus jest obrócony (scaleX < 0)
-    let isFlipped = false;
-    try {
-        const style = window.getComputedStyle(shuttleBus);
-        const transform = style.transform || style.webkitTransform;
-        if (transform && transform !== 'none') {
-            const matrix = new DOMMatrixReadOnly(transform);
-            isFlipped = matrix.a < 0;
-        }
-    } catch (e) {
-        isFlipped = false;
-    }
-
-    // Wylicz pozycję rury wydechowej z tyłu pojazdu
-    let puffX, driftX;
-    if (!isFlipped) {
-        // Jedzie w prawo: tył jest po lewej stronie
-        puffX = (busRect.left - stageRect.left) + 4;
-        driftX = -45;
-    } else {
-        // Jedzie w lewo: tył jest po prawej stronie
-        puffX = (busRect.right - stageRect.left) - 4;
-        driftX = 45;
-    }
-    const puffY = (busRect.top - stageRect.top) + (busRect.height * 0.6);
-
-    const puff = document.createElement('div');
-    puff.className = 'route-smoke-puff';
-    puff.style.setProperty('--puff-drift-x', `${driftX}px`);
-    const size = Math.floor(8 + Math.random() * 7);
-    puff.style.width = `${size}px`;
-    puff.style.height = `${size}px`;
-    puff.style.left = `${puffX}px`;
-    puff.style.top = `${puffY + (Math.random() * 4 - 2)}px`;
-
-    smokeLayer.appendChild(puff);
-
-    setTimeout(() => {
-        if (puff.parentNode) puff.remove();
-    }, 1150);
-}
-
-function startCruisingRouteAnimation() {
-    const scene = document.getElementById('active-route-scene');
-    if (scene) {
-        scene.classList.remove('d-none');
-    }
-
-    // Wyczyszczenie ewentualnych starych interwałów
-    stopCruisingRouteAnimation(false);
-
-    if (scene) {
-        scene.classList.remove('d-none');
-    }
-
-    routeCycleStart = Date.now();
-
-    // Ruchomy dymek ze spalin wydechu co ~220ms
-    cruisingSmokeInterval = setInterval(spawnCruisingSmokePuff, 220);
-}
-
-function stopCruisingRouteAnimation(hideScene = true) {
-    if (cruisingSmokeInterval) {
-        clearInterval(cruisingSmokeInterval);
-        cruisingSmokeInterval = null;
-    }
-    if (routeStatusInterval) {
-        clearInterval(routeStatusInterval);
-        routeStatusInterval = null;
-    }
-    routeCycleStart = 0;
-
-    const smokeLayer = document.getElementById('smoke-layer');
-    if (smokeLayer) {
-        smokeLayer.innerHTML = '';
-    }
-
-    if (hideScene) {
-        const scene = document.getElementById('active-route-scene');
-        if (scene) {
-            scene.classList.add('d-none');
-        }
-    }
-}
-
 function startWork() {
     startTime = Date.now();
     lastEarningsUpdate = 0;
@@ -402,9 +299,6 @@ function startWork() {
     intervalId = setInterval(updateUI, 1000);
     cachedSettings = Storage.getSettings();
     updateUI();
-
-    // Stała animacja jazdy busika od magazynu do paczkomatu ze spalinami i paczkami
-    startCruisingRouteAnimation();
 }
 
 export function initTracker() {
@@ -532,13 +426,10 @@ export function initTracker() {
         const trackerBox = document.querySelector('.tracker-box');
         if (trackerBox) trackerBox.classList.add('timer-running');
 
-        startCruisingRouteAnimation();
-
         intervalId = setInterval(updateUI, 1000);
         updateUI();
     } else {
         updateSessionInfo(null);
-        stopCruisingRouteAnimation();
     }
 
     // Natychmiastowe odświeżenie licznika po wybudzeniu iPhone'a lub powrocie z innej aplikacji

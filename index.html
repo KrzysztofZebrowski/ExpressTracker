@@ -51,7 +51,7 @@
     <!-- Bootstrap Icons 1.11.3 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=2.3.5">
 </head>
     
 <body>
@@ -133,107 +133,28 @@
                             const button = document.getElementById('btn-toggle-work');
                             button.innerHTML = '<i class="bi bi-stop-circle-fill me-2 fs-4"></i><span>Zakończ pracę</span>';
                             button.classList.add('active-btn');
-                            const scene = document.getElementById('active-route-scene');
-                            if (scene) scene.classList.remove('d-none');
                         }
                     } catch (error) {
                     }
                 </script>
             </div>
 
-            <!-- AKTYWNA TRASA: MAGAZYN (LEWO) ➔ BUSIK ➔ PACZKOMAT (PRAWO) -->
-            <div id="active-route-scene" class="active-route-card shadow-sm rounded-4 overflow-hidden mb-4 d-none">
-                <div class="d-flex align-items-center justify-content-between px-3 pt-2 pb-1">
-                    <span class="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 small fw-semibold">
-                        <i class="bi bi-truck text-primary me-1"></i> Trasa w toku...
-                    </span>
-                </div>
-                
-                <div class="route-stage" id="route-stage">
-                    <!-- Droga na dole łącząca magazyn z paczkomatem -->
-                    <div class="route-road">
-                        <div class="route-road-markings"></div>
-                    </div>
-
-                    <!-- 1. Magazyn po lewej stronie -->
-                    <div class="stage-building warehouse-building" id="stage-warehouse" title="Magazyn">
-                        <div class="warehouse-roof"></div>
-                        <div class="warehouse-body">
-                            <span class="warehouse-sign">MAGAZYN</span>
-                            <div class="warehouse-gate">
-                                <div class="warehouse-shutter"></div>
-                                <div class="warehouse-door-open">
-                                    <div class="warehouse-cargo-box"></div>
-                                </div>
-                            </div>
+            <!-- SZYBKIE LOGOWANIE -->
+            <div class="zebra-scanner-card shadow-sm rounded-4 p-3 mb-4">
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="zebra-icon-badge">
+                            <i class="bi bi-qr-code-scan fs-3"></i>
+                        </div>
+                        <div>
+                            <strong class="fs-6 text-body d-block">Szybkie logowanie do AK</strong>
+                            <span class="small text-secondary">Uruchom AK i od razu zeskanuj kod QR</span>
                         </div>
                     </div>
-
-                    <!-- 2. Paczkomat po prawej stronie -->
-                    <div class="stage-building paczkomat-building" id="stage-paczkomat" title="Paczkomat">
-                        <div class="paczkomat-canopy">
-                            <span>APM</span>
-                        </div>
-                        <div class="paczkomat-lockers">
-                            <div class="paczkomat-col">
-                                <span class="locker-door"></span>
-                                <span class="locker-door"></span>
-                                <span class="locker-door"></span>
-                            </div>
-                            <div class="paczkomat-col screen-col">
-                                <span class="locker-door"></span>
-                                <span class="paczkomat-screen" id="paczkomat-screen"></span>
-                                <span class="locker-door"></span>
-                            </div>
-                            <div class="paczkomat-col">
-                                <span class="locker-door"></span>
-                                <span class="locker-door"></span>
-                                <span class="locker-door"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 3. Prosty busik kurierski z bi-truck kursujący lewo-prawo -->
-                    <div class="route-shuttle-bus" id="route-shuttle-bus">
-                        <div class="shuttle-bus-body">
-                            <i class="bi bi-truck text-primary shuttle-truck-icon"></i>
-                        </div>
-                    </div>
-
-                    <!-- 4. Paczki wpadające z magazynu do busa -->
-                    <div class="route-parcel parcel-load-1" id="parcel-load-1">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
-                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
-                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
-                        </svg>
-                    </div>
-                    <div class="route-parcel parcel-load-2" id="parcel-load-2">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
-                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
-                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
-                        </svg>
-                    </div>
-
-                    <!-- 5. Paczki wpadające z busa do paczkomatu -->
-                    <div class="route-parcel parcel-unload-1" id="parcel-unload-1">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
-                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
-                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
-                        </svg>
-                    </div>
-                    <div class="route-parcel parcel-unload-2" id="parcel-unload-2">
-                        <svg viewBox="0 0 24 24" width="16" height="16">
-                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#d97706" stroke="#92400e" stroke-width="1.2"/>
-                            <line x1="2" y1="10" x2="22" y2="10" stroke="#92400e" stroke-width="1"/>
-                            <rect x="9" y="4" width="6" height="16" fill="#fde68a" opacity="0.9"/>
-                        </svg>
-                    </div>
-
-                    <!-- 6. Warstwa na ruchomy dymek ze spalin -->
-                    <div class="smoke-layer" id="smoke-layer"></div>
+                    <button type="button" id="btn-open-zebra-modal" class="btn btn-primary rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-2 shadow-sm flex-shrink-0" data-bs-toggle="modal" data-bs-target="#zebraLoginModal">
+                        <i class="bi bi-qr-code"></i>
+                        <span>Pokaż QR</span>
+                    </button>
                 </div>
             </div>
 
@@ -282,31 +203,10 @@
 
                 <div class="whats-new-features-list mb-3">
                     <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
-                        <i class="bi bi-truck text-primary fs-5 mt-1 flex-shrink-0"></i>
+                        <i class="bi bi-qr-code-scan text-primary fs-5 mt-1 flex-shrink-0"></i>
                         <div>
-                            <strong class="small d-block text-body">Animacja trasy kurierskiej</strong>
-                            <span class="small text-secondary">Ruchomy bus kursujący między magazynem a paczkomatem.</span>
-                        </div>
-                    </div>
-                    <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
-                        <i class="bi bi-shield-exclamation text-warning fs-5 mt-1 flex-shrink-0"></i>
-                        <div>
-                            <strong class="small d-block text-body">Ochrona progu zarobkowego</strong>
-                            <span class="small text-secondary">Inteligentne ostrzeżenie przed zbyt wczesnym wylogowaniem i kalkulator zysku przed zakończeniem trasy.</span>
-                        </div>
-                    </div>
-                    <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
-                        <i class="bi bi-window-stack text-success fs-5 mt-1 flex-shrink-0"></i>
-                        <div>
-                            <strong class="small d-block text-body">Nowoczesne okna i raporty</strong>
-                            <span class="small text-secondary">Pełne podglądy usuwania i importu danych JSON oraz eksport zestawień do pliku Excel.</span>
-                        </div>
-                    </div>
-                    <div class="whats-new-item d-flex align-items-start gap-2">
-                        <i class="bi bi-arrow-repeat text-info fs-5 mt-1 flex-shrink-0"></i>
-                        <div>
-                            <strong class="small d-block text-body">Automatyczne kopie zapasowe</strong>
-                            <span class="small text-secondary">Szybkie przypomnienia i pobieranie kopii zapasowej jednym kliknięciem.</span>
+                            <strong class="small d-block text-body">Automatyczne logowanie do AK za pomocą kodów QR</strong>
+                            <span class="small text-secondary">Po kliknięciu w "Pokaż QR" dostępna jest instrukcja jak skonfigurować automatyczne logowanie</span>
                         </div>
                     </div>
                 </div>
@@ -965,6 +865,170 @@
         </div>
     </div>
 
+    <!-- MODAL SZYBKIEGO LOGOWANIA -->
+    <div class="modal fade" id="zebraLoginModal" tabindex="-1" aria-labelledby="zebraLoginModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-primary-subtle text-primary">
+                            <i class="bi bi-qr-code-scan fs-4"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0" id="zebraLoginModalLabel">Szybkie logowanie do AK</h5>
+                            <span class="small text-muted">Szybkie logowanie kodem QR</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="zebraBtnClose"></button>
+                </div>
+                <div class="modal-body pt-2 pb-0">
+                    <!-- 1. Wybór loginu / trasy -->
+                    <div class="mb-3">
+                        <label for="zebraLoginSelect" class="form-label fw-bold small text-body mb-1">
+                            <i class="bi bi-person-badge text-primary me-1"></i>Trasa / Login w systemie:
+                        </label>
+                        <select id="zebraLoginSelect" class="form-select form-select-lg fw-semibold rounded-3 shadow-sm border-2">
+                            <!-- Opcje generowane dynamicznie przez zebra.js -->
+                        </select>
+                    </div>
+
+                    <!-- 2. Pole Hasła / PIN (jawny normalny input liczbowy, dokładnie 8 cyfr) -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <label for="zebraPinInput" class="form-label fw-bold small text-body mb-0">
+                                <i class="bi bi-key-fill text-primary me-1"></i>Hasło / PIN (dokładnie 8 cyfr):
+                            </label>
+                            <span id="zebraPinCounter" class="badge bg-secondary-subtle text-secondary border font-monospace">0/8 cyfr</span>
+                        </div>
+                        <input type="text" id="zebraPinInput" class="form-control form-control-lg fw-bold rounded-3 border-2 shadow-sm font-monospace text-center fs-4" placeholder="12345678" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off">
+                    </div>
+
+                    <!-- Walidacja PIN -->
+                    <div id="zebraPinValidationFeedback" class="small mb-2 d-none"></div>
+
+                    <!-- 3. Podgląd kodu QR na żywo -->
+                    <div class="zebra-qr-preview-wrapper text-center mt-2 mb-1 p-2">
+                        <div id="zebraQrContainer" class="zebra-qr-container d-flex flex-column align-items-center justify-content-center mx-auto">
+                            <!-- Kod QR lub stan oczekiwania generowany przez zebra.js -->
+                        </div>
+                        <div id="zebraQrPayloadInfo" class="small text-muted mt-1 d-none">
+                            <span class="badge bg-secondary-subtle text-secondary border font-monospace px-2 py-1">
+                                <i class="bi bi-braces me-1"></i><span id="zebraQrPayloadPreview"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-1 pb-3 d-flex gap-2">
+                    <button type="button" id="btn-open-datawedge-instruction" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-semibold flex-grow-1 d-flex align-items-center justify-content-center gap-1 shadow-sm">
+                        <i class="bi bi-question-circle"></i>
+                        <span>Instrukcja</span>
+                    </button>
+                    <button type="button" id="zebraBtnCloseModal" class="btn btn-secondary rounded-pill px-4 py-2 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Zamknij
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INSTRUKCJI DATAWEDGE -->
+    <div class="modal fade" id="dataWedgeModal" tabindex="-1" aria-labelledby="dataWedgeModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-0 pb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-warning-subtle text-warning">
+                            <i class="bi bi-gear-wide-connected fs-4"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0" id="dataWedgeModalLabel">Instrukcja Zebra DataWedge</h5>
+                            <span class="small text-muted">Konfiguracja TAB + ENTER</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="dataWedgeBtnClose"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="alert alert-primary-subtle border border-primary-subtle rounded-3 p-3 small mb-3">
+                        <strong class="d-block mb-1 text-primary">
+                            <i class="bi bi-info-circle-fill me-1"></i>Jak działa szybkie logowanie?
+                        </strong>
+                        <span class="text-secondary">
+                            Kod QR zawiera login, sprzętowy <b>TAB</b> (przeskok do pola hasła), <b>PIN</b> oraz <b>ENTER</b> (zatwierdzenie). Poniższa jednorazowa konfiguracja DataWedge zapewnia, że terminal prawidłowo zinterpretuje te znaki jako wciśnięcie fizycznych klawiszy.
+                        </span>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        <!-- Krok 1 -->
+                        <div class="datawedge-step-card p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="datawedge-step-badge badge text-white fs-6 fw-bold rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; background-color: #0284c7 !important; color: #ffffff !important;">1</span>
+                                <div>
+                                    <strong class="text-body d-block mb-1">Otwórz aplikację DataWedge</strong>
+                                    <p class="small text-secondary mb-0">
+                                        Wyszukaj i uruchom aplikację <span class="datawedge-code-pill">DataWedge</span> na terminalu Zebra.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Krok 2 -->
+                        <div class="datawedge-step-card p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="datawedge-step-badge badge text-white fs-6 fw-bold rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; background-color: #0284c7 !important; color: #ffffff !important;">2</span>
+                                <div>
+                                    <strong class="text-body d-block mb-1">Wybierz profil</strong>
+                                    <p class="small text-secondary mb-0">
+                                        <span class="datawedge-code-pill">Profile0 (default)</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Krok 3 -->
+                        <div class="datawedge-step-card p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="datawedge-step-badge badge text-white fs-6 fw-bold rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; background-color: #0284c7 !important; color: #ffffff !important;">3</span>
+                                <div>
+                                    <strong class="text-body d-block mb-1">Przewiń do sekcji <br><span class="datawedge-code-pill">Keystroke output</span>:</strong>
+                                    <p class="small text-secondary mb-0">
+                                        Upewnij się, że opcja <b>Enabled</b> jest zaznaczona, a następnie wybierz opcję <br><span class="datawedge-code-pill">Key event options</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Krok 4 -->
+                        <div class="datawedge-step-card p-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <span class="datawedge-step-badge badge text-white fs-6 fw-bold rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; background-color: #0284c7 !important; color: #ffffff !important;">4</span>
+                                <div>
+                                    <strong class="text-body d-block mb-1">Obsługa znaków kontrolnych (TAB i ENTER):</strong>
+                                    <p class="small text-secondary mb-0">
+                                        W sekcji <span class="datawedge-code-pill">Characters</span> zaznacz opcję: <br><span class="datawedge-code-pill">Send Characters as Events</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 mt-3 rounded-3 bg-body-tertiary border text-center small text-secondary">
+                        <i class="bi bi-phone text-primary me-1"></i>
+                        <b>Jak skanować:</b> Uruchom aplikację kurierską i od razu zeskanuj kod <b>(nie zaznaczaj pola do wpisania loginu)</b>. Skaner natychmiast sam uzupełni dane i zatwierdzi logowanie!
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-1 d-flex gap-2">
+                    <button type="button" id="btn-back-to-qr" class="btn btn-primary rounded-pill px-4 py-2 flex-grow-1 shadow-sm d-flex align-items-center justify-content-center gap-2">
+                        <i class="bi bi-qr-code"></i>
+                        <span>Wróć do generatora QR</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 py-2 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i> Zamknij
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap 5.3.3 Bundle JS (includes Popper) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -975,7 +1039,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=2.2.0')
+                navigator.serviceWorker.register('./sw.js?v=2.3.5')
                     .then((registration) => {
                         // Service Worker zarejestrowany pomyślnie
                     })
