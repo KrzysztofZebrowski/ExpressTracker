@@ -29,17 +29,21 @@ function formatCountdown(ms) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function getBillableHours(ms) {
+function getRoundedHours(ms) {
     const totalSeconds = Math.floor(ms / 1000);
     const fullHours = Math.floor(totalSeconds / 3600);
     const remainingSeconds = totalSeconds % 3600;
-    const isSaturday = new Date(startTime).getDay() === 6;
 
     let extraHours = 0;
     if (remainingSeconds >= 2700) { extraHours = 1; }
     else if (remainingSeconds >= 900) { extraHours = 0.5; }
 
-    const calculatedHours = fullHours + extraHours;
+    return fullHours + extraHours;
+}
+
+function getBillableHours(ms) {
+    const calculatedHours = getRoundedHours(ms);
+    const isSaturday = new Date(startTime).getDay() === 6;
 
     if (isSaturday) {
         return calculatedHours;
@@ -139,7 +143,7 @@ function updateUI() {
                 }
 
                 if (thresholdHint) {
-                    thresholdHint.innerHTML = `<i class="bi bi-lightning-charge-fill me-1 text-warning"></i><span><b>Nie kończ jeszcze!</b> Za chwilę wskoczy +${extraHours} h (+${extraEarnings} zł).</span>`;
+                    thresholdHint.innerHTML = `<i class="bi bi-lightning-charge-fill me-1 text-warning"></i><span><b>Nie kończ jeszcze!</b> Za chwilę wskoczy +${extraHours} h</span>`;
                 }
             } else {
                 thresholdWarning.classList.add('hidden');
@@ -227,13 +231,13 @@ async function stopWork() {
     const elapsed = endTime - startTime;
 
     const finalEarnings = calculateEarnings(elapsed, startTime);
-    const billableTime = getBillableHours(elapsed);
+    const actualRoundedHours = getRoundedHours(elapsed);
 
     Storage.addSession({
         start: startTime,
         end: endTime,
         durationMs: elapsed,
-        billableHours: billableTime,
+        billableHours: actualRoundedHours,
         earned: finalEarnings
     });
 
@@ -253,29 +257,33 @@ async function stopWork() {
     if (earningsDisplay) earningsDisplay.innerHTML = '<i class="bi bi-wallet2 text-success me-2"></i>Zarobek: <strong class="text-success">0.00 zł</strong>';
     updateSessionInfo(null);
 
-    if (isSaturday) {
+    const actualHours = elapsed / 3600000;
+    const shouldShowActualRate = isSaturday 
+        ? actualHours > 1 
+        : (actualHours > 1 && actualHours < 8);
+
+    if (shouldShowActualRate) {
         const settings = Storage.getSettings();
         const baseRate = parseFloat(settings.hourlyRate);
-        const actualHours = elapsed / 3600000;
-        let actualRate = 0;
+        const actualRate = parseFloat(finalEarnings) / actualHours;
 
-        if (actualHours > 1) {
-            actualRate = parseFloat(finalEarnings) / actualHours;
+        let colorClass = 'text-body';
+        if (actualRate > baseRate) colorClass = 'text-success';
+        else if (actualRate < baseRate) colorClass = 'text-danger';
 
-            let colorClass = 'text-body';
-            if (actualRate > baseRate) colorClass = 'text-success';
-            else if (actualRate < baseRate) colorClass = 'text-danger';
-    
-            const messageHtml = `Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:<br><br><div class="fs-1 fw-bold ${colorClass} text-center">${actualRate.toFixed(2)} zł/h</div>`;
-    
-            await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
-        }
+        const messagePrefix = isSaturday
+            ? 'Twoja rzeczywista stawka godzinowa za pracę w sobotę wynosi:'
+            : 'Twoja rzeczywista stawka godzinowa wynosi:';
+
+        const messageHtml = `${messagePrefix}<br><br><div class="fs-1 fw-bold ${colorClass} text-center">${actualRate.toFixed(2)} zł/h</div>`;
+
+        await showAlert('Rzeczywista stawka', messageHtml, 'Dalej');
     }
 
     await showSuccessModal({
         title: 'Trasa zakończona',
         message: 'Sesja pracy została pomyślnie zakończona i zapisana w historii.',
-        hours: `${billableTime} h`,
+        hours: `${actualRoundedHours} h`,
         earned: `${finalEarnings} zł`,
         buttonText: 'Gotowe'
     });

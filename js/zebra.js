@@ -1,13 +1,5 @@
-/**
- * ExpressTracker - Zebra TC27 QR Code Quick Login Module
- * Generuje lokalnie kody QR szybkiego logowania dla skanerów magazynowych (Zebra TC27).
- * Format: ${selectedLogin}\t${password}\r\n
- * (Login -> Sprzętowy TAB 0x09 -> Hasło/PIN -> Sprzętowy CRLF 0x0D 0x0A)
- */
-
 import { qrcode } from './qrcode.js';
 
-// Predefiniowana lista tras i przypisanych loginów w systemie
 export const ZEBRA_ROUTES = [
     { route: 'Z1', login: '6306346' },
     { route: 'Z2', login: '6306347' },
@@ -243,18 +235,12 @@ export function initZebra() {
         });
     }
 
-    /**
-     * Zapisuje wybrany login w pamięci podręcznej przeglądarki
-     */
     function saveSelectedLogin(login, mode) {
         if (!login) return;
         localStorage.setItem(STORAGE_KEY_LAST_LOGIN, login);
         localStorage.setItem(STORAGE_KEY_LAST_ROUTE, mode);
     }
 
-    /**
-     * Zapisuje hasło (PIN) w pamięci podręcznej przeglądarki
-     */
     function saveSelectedPin(pin) {
         if (pin) {
             localStorage.setItem(STORAGE_KEY_LAST_PIN, pin);
@@ -263,16 +249,10 @@ export function initZebra() {
         }
     }
 
-    /**
-     * Pobiera aktualnie wskazany login
-     */
     function getSelectedLogin() {
         return selectLogin.value ? selectLogin.value.trim() : '';
     }
 
-    /**
-     * Wyświetla stan początkowy (przed wpisaniem PIN-u)
-     */
     function renderInitialState() {
         qrContainer.innerHTML = `
             <div class="zebra-qr-empty-state d-flex flex-column align-items-center justify-content-center p-3 text-center">

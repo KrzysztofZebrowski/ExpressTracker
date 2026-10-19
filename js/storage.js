@@ -209,15 +209,16 @@ export const Storage = {
                 const durationMs = Number(s.durationMs ?? s.duration ?? (end - start));
 
                 let billableHours = s.billableHours != null ? parseFloat(s.billableHours) : null;
-                if (billableHours == null || isNaN(billableHours)) {
+                if (durationMs > 0) {
                     const totalSec = Math.floor(durationMs / 1000);
                     const fullH = Math.floor(totalSec / 3600);
                     const remSec = totalSec % 3600;
                     let extra = 0;
                     if (remSec >= 2700) extra = 1;
                     else if (remSec >= 900) extra = 0.5;
-                    const calc = fullH + extra;
-                    billableHours = isSaturday ? calc : Math.max(8, calc);
+                    billableHours = fullH + extra;
+                } else if (billableHours == null || isNaN(billableHours)) {
+                    billableHours = 0;
                 }
 
                 return {
@@ -254,7 +255,28 @@ export const Storage = {
 
     getSessions: () => {
         const data = localStorage.getItem(KEYS.SESSIONS);
-        return data ? JSON.parse(data) : [];
+        if (!data) return [];
+        try {
+            const sessions = JSON.parse(data);
+            return sessions.map(s => {
+                const durationMs = Number(s.durationMs ?? s.duration ?? (s.end && s.start ? s.end - s.start : 0));
+                if (durationMs > 0) {
+                    const totalSec = Math.floor(durationMs / 1000);
+                    const fullH = Math.floor(totalSec / 3600);
+                    const remSec = totalSec % 3600;
+                    let extra = 0;
+                    if (remSec >= 2700) extra = 1;
+                    else if (remSec >= 900) extra = 0.5;
+                    return {
+                        ...s,
+                        billableHours: fullH + extra
+                    };
+                }
+                return s;
+            });
+        } catch {
+            return [];
+        }
     },
     addSession: (session) => {
         const sessions = Storage.getSessions();

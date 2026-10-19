@@ -363,8 +363,7 @@ export function initSettings() {
                                     if (remainingSeconds >= 2700) extra = 1;
                                     else if (remainingSeconds >= 900) extra = 0.5;
                                     const calculated = fullHours + extra;
-                                    const isSat = s.isSaturday ?? (new Date(s.start).getDay() === 6);
-                                    totalHours += isSat ? calculated : Math.max(8, calculated);
+                                    totalHours += calculated;
                                 }
                             }
                         });

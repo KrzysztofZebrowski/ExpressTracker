@@ -697,17 +697,15 @@ export function showSessionModal({
             earnedInput.value = parseFloat(defaultEarned).toFixed(2);
         }
 
-        // Funkcja kalkulacji godzin wg zasad ExpressTracker
-        function getBillable(ms, isSaturday) {
+        // Funkcja kalkulacji zaokrąglonych godzin rzeczywistych wg zasad ExpressTracker
+        function getRoundedHours(ms) {
             const totalSec = Math.floor(ms / 1000);
             const fullH = Math.floor(totalSec / 3600);
             const remSec = totalSec % 3600;
             let extra = 0;
             if (remSec >= 2700) extra = 1;
             else if (remSec >= 900) extra = 0.5;
-            const calc = fullH + extra;
-            if (isSaturday) return calc;
-            return Math.max(8, calc);
+            return fullH + extra;
         }
 
         // Przeliczenie na żywo
@@ -732,15 +730,16 @@ export function showSessionModal({
             }
 
             const durationMs = endObj.getTime() - startObj.getTime();
-            const billableHours = getBillable(durationMs, isSaturday);
+            const roundedHours = getRoundedHours(durationMs);
 
             if (hoursDisplay) {
-                hoursDisplay.textContent = `${billableHours} h`;
+                hoursDisplay.textContent = `${roundedHours} h`;
             }
 
-            // Automatyczne wyliczenie kwoty jeśli użytkownik sam jej nie nadpisał
+            // Automatyczne wyliczenie kwoty (minimum 8h w dni powszednie) jeśli użytkownik sam jej nie nadpisał
             if (!isUserEarnedCustom) {
                 const settings = Storage.getSettings();
+                const billableHours = isSaturday ? roundedHours : Math.max(8, roundedHours);
                 const autoEarned = isSaturday
                     ? parseFloat(settings.saturdayRate || 396).toFixed(2)
                     : (billableHours * parseFloat(settings.hourlyRate || 34)).toFixed(2);
@@ -817,7 +816,7 @@ export function showSessionModal({
 
             const isSaturday = startObj.getDay() === 6;
             const durationMs = endObj.getTime() - startObj.getTime();
-            const billableHours = getBillable(durationMs, isSaturday);
+            const roundedHours = getRoundedHours(durationMs);
             const finalEarned = finalEarnedNum.toFixed(2);
 
             resolved = true;
@@ -830,7 +829,7 @@ export function showSessionModal({
                     startStr: startVal,
                     endStr: endVal,
                     durationMs,
-                    billableHours,
+                    billableHours: roundedHours,
                     earned: finalEarned
                 });
             });
