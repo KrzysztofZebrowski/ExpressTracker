@@ -1030,3 +1030,126 @@ export function showMonthSelector(monthsArray) {
         }
     });
 }
+
+/**
+ * Wyświetla okno modalne prezentujące wyłącznie ujemne rekordy (niedopłaty)
+ * z porównania z plikiem Excel lub z tabletu.
+ * @param {Array<{dateFormatted: string, appEarned: number, externalEarned: number, diff: number, source?: string, sourceClass?: string}>} records
+ * @param {boolean} hasData Czy w ogóle wykonano jakiekolwiek porównanie
+ * @returns {Promise<void>}
+ */
+export function showNegativeRecordsModal({ records = [], hasData = false } = {}) {
+    return new Promise((resolve) => {
+        const modalEl = document.getElementById('negativeRecordsModal');
+        const bodyEl = document.getElementById('negativeRecordsModalBody');
+        const btnConfirm = document.getElementById('negativeRecordsBtnConfirm');
+
+        if (!modalEl || !bodyEl) return resolve();
+
+        if (!hasData) {
+            bodyEl.innerHTML = `
+                <div class="text-center py-4 px-2">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle p-3 mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-info-circle-fill fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">Brak danych do porównania</h5>
+                    <p class="small text-muted mb-0">Najpierw wgraj plik rozliczeniowy Excel (.xlsx) lub wykonaj ręczne sprawdzenie z tabletu, aby system mógł zweryfikować rozbieżności.</p>
+                </div>
+            `;
+        } else if (records.length === 0) {
+            bodyEl.innerHTML = `
+                <div class="text-center py-4 px-2">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle p-3 mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-check-circle-fill fs-2"></i>
+                    </div>
+                    <h5 class="fw-bold text-success mb-2">Wszystko się zgadza!</h5>
+                    <p class="small text-muted mb-0">Nie znaleziono żadnych dni z niedopłatą. Wszystkie rozliczone kwoty są równe lub wyższe niż wyliczenia z aplikacji.</p>
+                </div>
+            `;
+        } else {
+            const totalLoss = Math.abs(records.reduce((sum, r) => sum + r.diff, 0));
+            const count = records.length;
+
+            const rowsHtml = records.map(r => {
+                const dateParts = String(r.dateFormatted || '').split(/[.-]/);
+                const dateShort = (dateParts.length >= 2 && dateParts[0].length === 4)
+                    ? `${dateParts[2]}.${dateParts[1]}`
+                    : (dateParts.length >= 2 ? `${dateParts[0]}.${dateParts[1]}` : r.dateFormatted);
+
+                return `
+                <tr>
+                    <td class="fw-bold text-nowrap">${dateShort}</td>
+                    <td>${r.appEarned.toFixed(2)} zł</td>
+                    <td>${r.externalEarned.toFixed(2)} zł</td>
+                    <td>
+                        <span class="badge bg-danger text-white fw-bold px-2 py-1 shadow-xs">
+                            ${r.diff.toFixed(2)} zł
+                        </span>
+                    </td>
+                </tr>
+            `;}).join('');
+
+            bodyEl.innerHTML = `
+                <div class="p-3 rounded-4 bg-danger-subtle border border-danger-subtle mb-3 text-center">
+                    <span class="small text-danger fw-semibold d-block text-uppercase">Łączna kwota niedopłat</span>
+                    <div class="fs-2 fw-bolder text-danger my-1">-${totalLoss.toFixed(2)} zł</div>
+                    <span class="badge bg-danger text-white rounded-pill px-3 py-1 small">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Liczba błędów: ${count}
+                    </span>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                    <span class="small text-muted fw-semibold"><i class="bi bi-list-ul me-1"></i>Lista źle rozliczonych dni:</span>
+                </div>
+
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-hover align-middle text-center mb-0 small">
+                        <thead class="bg-body-tertiary text-uppercase text-muted" style="font-size: 11px;">
+                            <tr>
+                                <th>Data</th>
+                                <th>Powinno być</th>
+                                <th>W tablecie</th>
+                                <th>Różnica</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        const bsModal = getModalInstance('negativeRecordsModal');
+        let resolved = false;
+
+        const cleanup = () => {
+            if (btnConfirm) btnConfirm.removeEventListener('click', handleConfirm);
+            modalEl.removeEventListener('hidden.bs.modal', handleHidden);
+        };
+
+        const handleConfirm = () => {
+            if (resolved) return;
+            resolved = true;
+            cleanup();
+            hideModalSafe(modalEl).then(resolve);
+        };
+
+        const handleHidden = () => {
+            if (!resolved) {
+                resolved = true;
+                cleanup();
+                resolve();
+            }
+        };
+
+        if (btnConfirm) btnConfirm.addEventListener('click', handleConfirm);
+        modalEl.addEventListener('hidden.bs.modal', handleHidden, { once: true });
+
+        if (bsModal) {
+            bsModal.show();
+        } else {
+            resolve();
+        }
+    });
+}

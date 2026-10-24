@@ -51,7 +51,7 @@
     <!-- Bootstrap Icons 1.11.3 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=2.3.6">
+    <link rel="stylesheet" href="css/styles.css?v=2.3.8">
 </head>
     
 <body>
@@ -203,10 +203,10 @@
 
                 <div class="whats-new-features-list mb-3">
                     <div class="whats-new-item d-flex align-items-start gap-2 mb-2">
-                        <i class="bi bi-qr-code-scan text-primary fs-5 mt-1 flex-shrink-0"></i>
+                        <i class="bi bi-exclamation-octagon-fill text-danger fs-5 mt-1 flex-shrink-0"></i>
                         <div>
-                            <strong class="small d-block text-body">Automatyczne logowanie do AK za pomocą kodów QR</strong>
-                            <span class="small text-secondary">Po kliknięciu w "Pokaż QR" dostępna jest instrukcja jak skonfigurować automatyczne logowanie</span>
+                            <strong class="small d-block text-body">Szybki podgląd niedopłat</strong>
+                            <span class="small text-secondary">Nowy przycisk w sekcji rozliczeń pozwala natychmiast wyświetlić tylko dni z ujemną różnicą (zaniżone stawki z firmy) wraz z sumą strat.</span>
                         </div>
                     </div>
                 </div>
@@ -865,6 +865,34 @@
         </div>
     </div>
 
+    <!-- =========================================
+         BOOTSTRAP MODAL: ROZBIEŻNOŚCI UJEMNE (NIEDOPŁATY)
+         ========================================= -->
+    <div class="modal fade" id="negativeRecordsModal" tabindex="-1" aria-labelledby="negativeRecordsModalLabel" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content custom-bs-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="modal-icon-badge bg-danger-subtle text-danger" id="negativeRecordsModalIconBadge">
+                            <i class="bi bi-exclamation-octagon-fill fs-4"></i>
+                        </span>
+                        <div>
+                            <h5 class="modal-title fw-bold m-0 text-danger" id="negativeRecordsModalLabel">Rozbieżności</h5>
+                            <span class="small text-muted" id="negativeRecordsModalSubtitle">Niedopłaty względem aplikacji</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Zamknij" id="negativeRecordsBtnClose"></button>
+                </div>
+                <div class="modal-body py-3" id="negativeRecordsModalBody"></div>
+                <div class="modal-footer border-0 pt-1 d-flex">
+                    <button type="button" id="negativeRecordsBtnConfirm" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">
+                        <i class="bi bi-check-lg me-1"></i> Zamknij
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL SZYBKIEGO LOGOWANIA -->
     <div class="modal fade" id="zebraLoginModal" tabindex="-1" aria-labelledby="zebraLoginModalLabel" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
@@ -1039,7 +1067,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js?v=2.3.6')
+                navigator.serviceWorker.register('./sw.js?v=2.3.8')
                     .then((registration) => {
                         // Service Worker zarejestrowany pomyślnie
                     })

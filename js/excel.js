@@ -1,5 +1,5 @@
 import { Storage } from './storage.js';
-import { showPrompt, showConfirm, showAlert, showManualCheckModal, hideManualCheckModal, showMonthSelector } from './modal.js';
+import { showPrompt, showConfirm, showAlert, showManualCheckModal, hideManualCheckModal, showMonthSelector, showNegativeRecordsModal } from './modal.js';
 
 // Funkcja asynchronicznie pobierająca bibliotekę Excela
 function loadExcelLibrary() {
@@ -18,16 +18,28 @@ function loadExcelLibrary() {
     });
 }
 
+let lastExcelResults = null;
+
 export function initExcel() {
     const fileInput = document.getElementById('excel-upload');
     const resultsContainer = document.getElementById('excel-results');
     
     const btnManualCheck = document.getElementById('btn-manual-check');
     const manualResultsContainer = document.getElementById('manual-check-results');
+    const btnShowNegative = document.getElementById('btn-show-negative-records');
+
+    if (btnShowNegative) {
+        btnShowNegative.addEventListener('click', () => {
+            const { records, hasData } = collectNegativeRecords();
+            showNegativeRecordsModal({ records, hasData });
+        });
+    }
 
     if (manualResultsContainer) {
         renderManualChecks();
     }
+
+    updateNegativeBadge();
 
     // ==========================================
     // 1. OBSŁUGA PLIKU EXCEL (.XLSX)
@@ -124,11 +136,26 @@ export function initExcel() {
 
                     const totalDiff = totalExcel - totalApp;
 
+                    lastExcelResults = {
+                        monthName: displayMonthName,
+                        records: filteredDates.map(date => ({
+                            date,
+                            exVal: excelDataByDate[date] || 0,
+                            myVal: myDataByDate[date] || 0,
+                            diff: (excelDataByDate[date] || 0) - (myDataByDate[date] || 0)
+                        }))
+                    };
+
                     let html = `
                         <div class="month-card excel-result-card shadow-sm rounded-4 overflow-hidden mb-4">
-                            <div class="excel-month-header p-3 text-center text-white fw-bold d-flex align-items-center justify-content-center gap-2">
-                                <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>
-                                <span>Rozliczenie: <b>${displayMonthName}</b></span>
+                            <div class="excel-month-header p-3 text-white fw-bold d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill fs-5"></i>
+                                    <span>Rozliczenie: <b>${displayMonthName}</b></span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-light text-danger fw-bold rounded-pill px-2.5 py-1 btn-show-negative-excel shadow-none" style="font-size: 11px;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Tylko ujemne
+                                </button>
                             </div>
 
                             <div class="comparison-summary d-flex justify-content-around p-3 border-bottom text-center">
@@ -194,6 +221,16 @@ export function initExcel() {
 
                     resultsContainer.innerHTML = html;
                     event.target.value = ''; 
+
+                    const btnCardNeg = resultsContainer.querySelector('.btn-show-negative-excel');
+                    if (btnCardNeg) {
+                        btnCardNeg.addEventListener('click', () => {
+                            const { records } = collectNegativeRecords({ excelOnly: true });
+                            showNegativeRecordsModal({ records, hasData: true });
+                        });
+                    }
+
+                    updateNegativeBadge();
 
                 } catch (err) {
                     console.error(err);
@@ -345,9 +382,14 @@ export function initExcel() {
 
             html += `
             <div class="month-card shadow-sm rounded-4 overflow-hidden mb-4">
-                <div class="manual-check-header p-3 text-center text-white fw-bold d-flex align-items-center justify-content-center gap-2">
-                    <i class="bi bi-tablet-landscape-fill fs-5"></i>
-                    <span>Ręczne sprawdzenie: <b>${capMonthName}</b></span>
+                <div class="manual-check-header p-3 text-white fw-bold d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-tablet-landscape-fill fs-5"></i>
+                        <span>Ręczne sprawdzenie: <br><b>${capMonthName}</b></span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light text-danger fw-bold rounded-pill px-2.5 py-1 btn-show-negative-manual shadow-none" data-month="${month}" style="font-size: 11px;">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Tylko ujemne
+                    </button>
                 </div>
                 
                 <div class="comparison-summary d-flex justify-content-around p-3 border-bottom text-center">
@@ -386,6 +428,14 @@ export function initExcel() {
 
         manualResultsContainer.innerHTML = html;
 
+        document.querySelectorAll('.btn-show-negative-manual').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const month = e.currentTarget.getAttribute('data-month');
+                const { records } = collectNegativeRecords({ manualMonth: month });
+                showNegativeRecordsModal({ records, hasData: true });
+            });
+        });
+
         document.querySelectorAll('.btn-edit-tablet').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const month = e.currentTarget.getAttribute('data-month');
@@ -416,5 +466,74 @@ export function initExcel() {
                 }
             });
         });
+
+        updateNegativeBadge();
+    }
+
+    function collectNegativeRecords({ excelOnly = false, manualMonth = null } = {}) {
+        const records = [];
+        let hasData = false;
+
+        // 1. Z pliku Excel
+        if (!manualMonth && lastExcelResults && Array.isArray(lastExcelResults.records) && lastExcelResults.records.length > 0) {
+            hasData = true;
+            lastExcelResults.records.forEach(r => {
+                if (r.diff < -0.05) {
+                    const parts = r.date.split('-');
+                    const formatted = parts.length === 3 ? `${parts[2]}.${parts[1]}` : r.date;
+                    records.push({
+                        dateFormatted: formatted,
+                        appEarned: r.myVal,
+                        externalEarned: r.exVal,
+                        diff: r.diff,
+                        source: `Excel (${lastExcelResults.monthName})`,
+                        sourceClass: 'bg-success-subtle text-success'
+                    });
+                }
+            });
+        }
+
+        // 2. Z ręcznych sprawdzeń tabletu
+        if (!excelOnly) {
+            const manualChecks = getManualData();
+            const months = manualMonth ? [manualMonth] : Object.keys(manualChecks);
+            if (months.length > 0 && months.some(m => Array.isArray(manualChecks[m]) && manualChecks[m].length > 0)) {
+                hasData = true;
+                months.forEach(month => {
+                    const items = manualChecks[month] || [];
+                    const monthDate = new Date(`${month}-01`);
+                    const monthName = monthDate.toLocaleDateString('pl-PL', { month: 'long' });
+                    const capMonthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+                    items.forEach(item => {
+                        const rowDiff = parseFloat(item.tabletEarned) - parseFloat(item.appEarned);
+                        if (rowDiff < -0.05) {
+                            records.push({
+                                dateFormatted: item.dateStr.split('.').slice(0, 2).join('.'),
+                                appEarned: parseFloat(item.appEarned),
+                                externalEarned: parseFloat(item.tabletEarned),
+                                diff: rowDiff,
+                                source: `Tablet (${capMonthName})`,
+                                sourceClass: 'bg-info-subtle text-info'
+                            });
+                        }
+                    });
+                });
+            }
+        }
+
+        return { records, hasData };
+    }
+
+    function updateNegativeBadge() {
+        const badge = document.getElementById('badge-negative-count');
+        if (!badge) return;
+        const { records, hasData } = collectNegativeRecords();
+        if (hasData && records.length > 0) {
+            badge.textContent = records.length;
+            badge.classList.remove('d-none');
+        } else {
+            badge.classList.add('d-none');
+        }
     }
 }
