@@ -13,13 +13,30 @@ function getModalInstance(elementId) {
     return window.bootstrap?.Modal ? bootstrap.Modal.getOrCreateInstance(el, { backdrop: 'static', keyboard: true }) : null;
 }
 
+// Globalne zabezpieczenie przed ostrzeżeniem Chromium/WAI-ARIA:
+// "Blocked aria-hidden on an element because its descendant retained focus"
+if (typeof document !== 'undefined') {
+    const blurModalFocus = (event) => {
+        const modal = event.target;
+        if (document.activeElement && modal && typeof modal.contains === 'function' && modal.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
+    };
+
+    document.addEventListener('hide.bs.modal', blurModalFocus, true);
+    document.addEventListener('hidden.bs.modal', blurModalFocus, true);
+}
+
 // Bezpieczne zamknięcie modalu z oczekiwaniem na zakończenie animacji Bootstrapa
 function hideModalSafe(modalEl) {
     return new Promise((resolve) => {
         if (!modalEl || !modalEl.classList.contains('show')) {
             return resolve();
         }
-        const bsModal = bootstrap.Modal.getInstance(modalEl);
+        if (document.activeElement && modalEl.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
+        const bsModal = bootstrap.Modal.getInstance(modalEl) || (window.bootstrap?.Modal ? bootstrap.Modal.getOrCreateInstance(modalEl) : null);
         if (!bsModal) {
             return resolve();
         }
@@ -106,6 +123,7 @@ export function showSuccessModal({
         const handleConfirm = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(resolve);
         };
@@ -170,6 +188,8 @@ export function showAlert(title, message, buttonText = 'Zatwierdź') {
         const btnCancel = document.getElementById('appModalBtnCancel');
         const btnConfirm = document.getElementById('appModalBtnConfirm');
         const iconBadge = document.getElementById('appModalIcon');
+        const modalFooter = modalEl.querySelector('.modal-footer');
+        if (modalFooter) modalFooter.className = 'modal-footer border-0 pt-1 d-flex gap-2';
 
         if (!modalEl) {
             alert(message);
@@ -210,6 +230,7 @@ export function showAlert(title, message, buttonText = 'Zatwierdź') {
         const handleConfirm = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(resolve);
         };
@@ -253,6 +274,8 @@ export function showPrompt(title, defaultValue = '', inputType = 'text') {
         const btnCancel = document.getElementById('appModalBtnCancel');
         const btnConfirm = document.getElementById('appModalBtnConfirm');
         const iconBadge = document.getElementById('appModalIcon');
+        const modalFooter = modalEl.querySelector('.modal-footer');
+        if (modalFooter) modalFooter.className = 'modal-footer border-0 pt-1 d-flex gap-2';
 
         if (!modalEl) {
             const val = prompt(title, defaultValue);
@@ -308,6 +331,7 @@ export function showPrompt(title, defaultValue = '', inputType = 'text') {
             if (resolved) return;
             resolved = true;
             const val = inputEl.value;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(val));
         };
@@ -315,6 +339,7 @@ export function showPrompt(title, defaultValue = '', inputType = 'text') {
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(null));
         };
@@ -409,6 +434,7 @@ export function showDeleteConfirmModal({
         const handleConfirm = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(true));
         };
@@ -416,6 +442,7 @@ export function showDeleteConfirmModal({
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(false));
         };
@@ -493,6 +520,7 @@ export function showImportConfirmModal({
         const handleConfirm = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(true));
         };
@@ -500,6 +528,7 @@ export function showImportConfirmModal({
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(false));
         };
@@ -561,6 +590,8 @@ export function showConfirm(title, message, confirmText = null, cancelText = nul
         const btnCancel = document.getElementById('appModalBtnCancel');
         const btnConfirm = document.getElementById('appModalBtnConfirm');
         const iconBadge = document.getElementById('appModalIcon');
+        const modalFooter = modalEl.querySelector('.modal-footer');
+        if (modalFooter) modalFooter.className = 'modal-footer border-0 pt-1 d-flex gap-2';
 
         if (!modalEl) {
             const res = confirm(`${title}\n\n${message}`);
@@ -577,18 +608,25 @@ export function showConfirm(title, message, confirmText = null, cancelText = nul
         btnConfirm.innerHTML = confirmText ? `<i class="bi bi-check-lg me-1"></i> ${confirmText}` : '<i class="bi bi-check-lg me-1"></i> Zatwierdź';
 
         if (lowerTitle.includes('próg') || lowerTitle.includes('progu') || lowerTitle.includes('wylogowan')) {
-            btnCancel.className = 'btn btn-primary rounded-pill px-4 flex-grow-1 shadow-sm fw-bold';
-            btnConfirm.className = 'btn btn-outline-danger rounded-pill px-3';
-            btnCancel.innerHTML = cancelText ? `<i class="bi bi-play-circle-fill me-1"></i> ${cancelText}` : '<i class="bi bi-arrow-left me-1"></i> Kontynuuj pracę';
-            btnConfirm.innerHTML = confirmText ? `<i class="bi bi-stop-circle me-1"></i> ${confirmText}` : '<i class="bi bi-check-lg me-1"></i> Zakończ mimo to';
+            modalEl.classList.add('modal-threshold-confirm');
+            if (modalFooter) modalFooter.className = 'modal-footer border-0 threshold-modal-footer';
+            btnCancel.className = 'btn btn-primary w-100 py-2.5 rounded-pill shadow-sm fw-bold fs-6 d-flex align-items-center justify-content-center gap-2 m-0';
+            btnConfirm.className = 'btn btn-threshold-stop w-100 py-2.5 rounded-pill fw-semibold d-flex align-items-center justify-content-center gap-2 m-0';
+            btnCancel.innerHTML = cancelText ? `<i class="bi bi-play-circle-fill fs-5"></i> ${cancelText}` : '<i class="bi bi-play-circle-fill fs-5"></i> Kontynuuj pracę';
+            btnConfirm.innerHTML = confirmText ? `<i class="bi bi-stop-circle-fill fs-5"></i> ${confirmText}` : '<i class="bi bi-stop-circle-fill fs-5"></i> Zakończ mimo to';
+            if (subtitleEl) subtitleEl.textContent = 'Możesz zyskać dodatkowe wynagrodzenie';
             iconBadge.innerHTML = '<i class="bi bi-hourglass-split text-warning fs-4"></i>';
-            iconBadge.className = 'modal-icon-badge bg-warning-subtle text-warning';
+            iconBadge.className = 'modal-icon-badge bg-warning-subtle text-warning border border-warning-subtle';
         } else if (lowerTitle.includes('uwaga') || lowerTitle.includes('przerwano')) {
+            modalEl.classList.remove('modal-threshold-confirm');
+            if (modalFooter) modalFooter.className = 'modal-footer border-0 pt-1 d-flex gap-2';
             btnCancel.className = 'btn btn-secondary rounded-pill px-4 flex-grow-1';
             btnConfirm.className = 'btn btn-warning text-dark rounded-pill px-4 flex-grow-1 shadow-sm';
             iconBadge.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-warning fs-4"></i>';
             iconBadge.className = 'modal-icon-badge bg-warning-subtle text-warning';
         } else {
+            modalEl.classList.remove('modal-threshold-confirm');
+            if (modalFooter) modalFooter.className = 'modal-footer border-0 pt-1 d-flex gap-2';
             btnCancel.className = 'btn btn-secondary rounded-pill px-4 flex-grow-1';
             btnConfirm.className = 'btn btn-primary rounded-pill px-4 flex-grow-1 shadow-sm';
             iconBadge.innerHTML = '<i class="bi bi-question-circle-fill text-primary fs-4"></i>';
@@ -602,11 +640,14 @@ export function showConfirm(title, message, confirmText = null, cancelText = nul
             btnConfirm.removeEventListener('click', handleConfirm);
             btnCancel.removeEventListener('click', handleCancel);
             modalEl.removeEventListener('hidden.bs.modal', handleHidden);
+            modalEl.classList.remove('modal-threshold-confirm');
+            if (modalFooter) modalFooter.className = 'modal-footer border-0 pt-1 d-flex gap-2';
         };
 
         const handleConfirm = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(true));
         };
@@ -614,6 +655,7 @@ export function showConfirm(title, message, confirmText = null, cancelText = nul
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(false));
         };
@@ -820,6 +862,7 @@ export function showSessionModal({
             const finalEarned = finalEarnedNum.toFixed(2);
 
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => {
                 resolve({
@@ -838,6 +881,7 @@ export function showSessionModal({
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(null));
         };
@@ -906,6 +950,7 @@ export function showManualCheckModal(title, messageHtml, defaultValue = '') {
             titleEl.classList.add('title-pulsed');
 
             const val = inputEl.value;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             resolve(val);
         };
@@ -913,6 +958,7 @@ export function showManualCheckModal(title, messageHtml, defaultValue = '') {
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(null));
         };
@@ -958,6 +1004,9 @@ export function showManualCheckModal(title, messageHtml, defaultValue = '') {
 export function hideManualCheckModal() {
     const modalEl = document.getElementById('manualCheckModal');
     if (modalEl && modalEl.classList.contains('show')) {
+        if (document.activeElement && modalEl.contains(document.activeElement)) {
+            document.activeElement.blur();
+        }
         const bsModal = getModalInstance('manualCheckModal');
         if (bsModal) bsModal.hide();
     }
@@ -1000,6 +1049,7 @@ export function showMonthSelector(monthsArray) {
             if (resolved) return;
             resolved = true;
             const chosen = selectEl.value;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(chosen));
         };
@@ -1007,6 +1057,7 @@ export function showMonthSelector(monthsArray) {
         const handleCancel = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(() => resolve(null));
         };
@@ -1046,6 +1097,12 @@ export function showNegativeRecordsModal({ records = [], hasData = false } = {})
 
         if (!modalEl || !bodyEl) return resolve();
 
+        // Bezpieczne wyodrębnienie wyłącznie rekordów o ujemnej rozbieżności (niedopłat)
+        const negativeRecords = (records || []).filter(r => {
+            const diff = typeof r.diff === 'number' ? r.diff : parseFloat(r.diff);
+            return !isNaN(diff) && diff < -0.05;
+        });
+
         if (!hasData) {
             bodyEl.innerHTML = `
                 <div class="text-center py-4 px-2">
@@ -1056,7 +1113,7 @@ export function showNegativeRecordsModal({ records = [], hasData = false } = {})
                     <p class="small text-muted mb-0">Najpierw wgraj plik rozliczeniowy Excel (.xlsx) lub wykonaj ręczne sprawdzenie z tabletu, aby system mógł zweryfikować rozbieżności.</p>
                 </div>
             `;
-        } else if (records.length === 0) {
+        } else if (negativeRecords.length === 0) {
             bodyEl.innerHTML = `
                 <div class="text-center py-4 px-2">
                     <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle p-3 mb-3" style="width: 64px; height: 64px;">
@@ -1067,10 +1124,17 @@ export function showNegativeRecordsModal({ records = [], hasData = false } = {})
                 </div>
             `;
         } else {
-            const totalLoss = Math.abs(records.reduce((sum, r) => sum + r.diff, 0));
-            const count = records.length;
+            // Suma strat uwzględnia wyłącznie dni na minusie, bez wpływu nadwyżek
+            const totalLoss = negativeRecords.reduce((sum, r) => {
+                const diff = typeof r.diff === 'number' ? r.diff : parseFloat(r.diff);
+                return sum + Math.abs(diff);
+            }, 0);
+            const count = negativeRecords.length;
 
-            const rowsHtml = records.map(r => {
+            const rowsHtml = negativeRecords.map(r => {
+                const diff = typeof r.diff === 'number' ? r.diff : parseFloat(r.diff);
+                const appVal = typeof r.appEarned === 'number' ? r.appEarned : parseFloat(r.appEarned || 0);
+                const extVal = typeof r.externalEarned === 'number' ? r.externalEarned : parseFloat(r.externalEarned || 0);
                 const dateParts = String(r.dateFormatted || '').split(/[.-]/);
                 const dateShort = (dateParts.length >= 2 && dateParts[0].length === 4)
                     ? `${dateParts[2]}.${dateParts[1]}`
@@ -1079,11 +1143,11 @@ export function showNegativeRecordsModal({ records = [], hasData = false } = {})
                 return `
                 <tr>
                     <td class="fw-bold text-nowrap">${dateShort}</td>
-                    <td>${r.appEarned.toFixed(2)} zł</td>
-                    <td>${r.externalEarned.toFixed(2)} zł</td>
+                    <td>${appVal.toFixed(2)} zł</td>
+                    <td>${extVal.toFixed(2)} zł</td>
                     <td>
                         <span class="badge bg-danger text-white fw-bold px-2 py-1 shadow-xs">
-                            ${r.diff.toFixed(2)} zł
+                            ${diff.toFixed(2)} zł
                         </span>
                     </td>
                 </tr>
@@ -1131,6 +1195,7 @@ export function showNegativeRecordsModal({ records = [], hasData = false } = {})
         const handleConfirm = () => {
             if (resolved) return;
             resolved = true;
+            if (document.activeElement) document.activeElement.blur();
             cleanup();
             hideModalSafe(modalEl).then(resolve);
         };

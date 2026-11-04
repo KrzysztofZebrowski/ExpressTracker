@@ -517,15 +517,99 @@ button, .btn, .nav-item, .settings-segmented-control {
     100% { transform: scale(1); }
 }
 
-/* Modal przedwczesnego wylogowania */
+/* Modal przedwczesnego zakończenia przed progiem */
 .threshold-early-warning-modal-box {
-    background: rgba(245, 158, 11, 0.08);
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    background: linear-gradient(145deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.04) 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.35);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.06);
 }
 
 [data-bs-theme="dark"] .threshold-early-warning-modal-box {
-    background: rgba(245, 158, 11, 0.14);
-    border-color: rgba(245, 158, 11, 0.35);
+    background: linear-gradient(145deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%);
+    border-color: rgba(245, 158, 11, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.threshold-modal-earnings-box {
+    background: rgba(34, 197, 94, 0.08);
+    border: 1.5px solid rgba(34, 197, 94, 0.25);
+    transition: all 0.2s ease;
+}
+
+[data-bs-theme="dark"] .threshold-modal-earnings-box {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* Kompaktowe odstępy dla modalu ostrzeżenia o progu */
+.modal-threshold-confirm .modal-header {
+    padding: 16px 20px 4px 20px !important;
+}
+
+.modal-threshold-confirm .modal-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+}
+
+.modal-threshold-confirm .modal-title {
+    font-size: 1.15rem;
+    line-height: 1.25;
+}
+
+.modal-threshold-confirm .modal-body {
+    padding: 8px 20px 4px 20px !important;
+}
+
+.modal-threshold-confirm .threshold-early-warning-modal-box {
+    padding: 12px 14px !important;
+    margin-bottom: 0 !important;
+}
+
+.threshold-modal-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 8px 20px 18px 20px !important;
+}
+
+/* Nowoczesny przycisk Zakończ mimo to w modalu progu */
+.btn-threshold-stop {
+    background-color: #fef2f2 !important;
+    border: 1.5px solid #fecaca !important;
+    color: #dc2626 !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-threshold-stop:hover,
+.btn-threshold-stop:focus {
+    background-color: #fee2e2 !important;
+    border-color: #fca5a5 !important;
+    color: #b91c1c !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+}
+
+.btn-threshold-stop:active {
+    transform: scale(0.98);
+}
+
+[data-bs-theme="dark"] .btn-threshold-stop {
+    background-color: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    color: #f87171 !important;
+}
+
+[data-bs-theme="dark"] .btn-threshold-stop:hover,
+[data-bs-theme="dark"] .btn-threshold-stop:focus {
+    background-color: rgba(239, 68, 68, 0.22) !important;
+    border-color: rgba(239, 68, 68, 0.55) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.25);
 }
 
 /* Karta Przypomnienia o Kopii Zapasowej */

@@ -478,14 +478,15 @@ export function initExcel() {
         if (!manualMonth && lastExcelResults && Array.isArray(lastExcelResults.records) && lastExcelResults.records.length > 0) {
             hasData = true;
             lastExcelResults.records.forEach(r => {
-                if (r.diff < -0.05) {
-                    const parts = r.date.split('-');
+                const diff = typeof r.diff === 'number' ? r.diff : parseFloat(r.diff);
+                if (!isNaN(diff) && diff < -0.05) {
+                    const parts = String(r.date || '').split('-');
                     const formatted = parts.length === 3 ? `${parts[2]}.${parts[1]}` : r.date;
                     records.push({
                         dateFormatted: formatted,
-                        appEarned: r.myVal,
-                        externalEarned: r.exVal,
-                        diff: r.diff,
+                        appEarned: parseFloat(r.myVal || 0),
+                        externalEarned: parseFloat(r.exVal || 0),
+                        diff: diff,
                         source: `Excel (${lastExcelResults.monthName})`,
                         sourceClass: 'bg-success-subtle text-success'
                     });
@@ -506,12 +507,14 @@ export function initExcel() {
                     const capMonthName = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
                     items.forEach(item => {
-                        const rowDiff = parseFloat(item.tabletEarned) - parseFloat(item.appEarned);
-                        if (rowDiff < -0.05) {
+                        const appVal = parseFloat(item.appEarned || 0);
+                        const tabVal = parseFloat(item.tabletEarned || 0);
+                        const rowDiff = tabVal - appVal;
+                        if (!isNaN(rowDiff) && rowDiff < -0.05) {
                             records.push({
-                                dateFormatted: item.dateStr.split('.').slice(0, 2).join('.'),
-                                appEarned: parseFloat(item.appEarned),
-                                externalEarned: parseFloat(item.tabletEarned),
+                                dateFormatted: String(item.dateStr || '').split('.').slice(0, 2).join('.'),
+                                appEarned: appVal,
+                                externalEarned: tabVal,
                                 diff: rowDiff,
                                 source: `Tablet (${capMonthName})`,
                                 sourceClass: 'bg-info-subtle text-info'
@@ -529,8 +532,9 @@ export function initExcel() {
         const badge = document.getElementById('badge-negative-count');
         if (!badge) return;
         const { records, hasData } = collectNegativeRecords();
-        if (hasData && records.length > 0) {
-            badge.textContent = records.length;
+        const negCount = (records || []).filter(r => (typeof r.diff === 'number' ? r.diff : parseFloat(r.diff)) < -0.05).length;
+        if (hasData && negCount > 0) {
+            badge.textContent = negCount;
             badge.classList.remove('d-none');
         } else {
             badge.classList.add('d-none');

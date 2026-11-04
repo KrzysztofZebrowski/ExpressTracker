@@ -180,20 +180,16 @@ async function stopWork() {
             const extraMoney = (extraHours * hourlyRate).toFixed(2);
 
             const warningHtml = `
-                <div class="threshold-early-warning-modal-box p-3 rounded-4 mb-3 text-start">
+                <div class="threshold-early-warning-modal-box p-3 rounded-4 mb-0 text-start">
                     <div class="d-flex align-items-center gap-2 mb-2 text-warning fw-bold fs-6">
-                        <i class="bi bi-hourglass-split fs-4"></i>
-                        <span>Zostało tylko <span class="badge bg-warning text-dark px-2 py-1 fs-6">${timeStr}</span> do progu!</span>
+                        <i class="bi bi-hourglass-split fs-4 flex-shrink-0"></i>
+                        <span>Jeśli popracujesz jeszcze <span class="badge bg-warning text-dark px-2 py-1 fs-6">${timeStr}</span>, zaliczy Ci się dodatkowe <b>+${extraHours} h</b> do wypłaty</span>
                     </div>
-                    <p class="small text-secondary mb-3 lh-sm">
-                        Twój czas pracy jest rozliczany w progach. Jeśli popracujesz jeszcze <b>${timeStr}</b>, zaliczy Ci się dodatkowe <b>+${extraHours} h</b> do wypłaty.
-                    </p>
                     <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-body-secondary border">
                         <span class="small fw-semibold text-muted">Dodatkowy zarobek:</span>
                         <span class="fs-5 fw-bold text-success">+${extraMoney} zł</span>
                     </div>
                 </div>
-                <div class="small text-muted text-center">Czy na pewno chcesz zakończyć trasę i stracić wyższy próg?</div>
             `;
 
             const confirmed = await showConfirm(
