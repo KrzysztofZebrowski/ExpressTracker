@@ -9,7 +9,9 @@ export const ZEBRA_ROUTES = [
     { route: 'Z6', login: '6306325' },
     { route: 'Z7', login: '6306394' },
     { route: 'Z8', login: '6306395' },
-    { route: 'Z9', login: '6306396' }
+    { route: 'Z9', login: '6306396' },
+    { route: 'X3', login: '6306400' },
+    { route: '#C', login: '6306306' }
 ];
 
 const STORAGE_KEY_LAST_LOGIN = 'wt_zebra_last_login';
@@ -350,7 +352,7 @@ export function initZebra() {
                 cellSize,
                 margin,
                 scalable: false,
-                title: 'Kod logowania Zebra TC27'
+                title: 'Kod logowania'
             });
 
             qrContainer.innerHTML = `
