@@ -1083,8 +1083,12 @@
     <!-- Service Worker Registration -->
     <script>
         if ('serviceWorker' in navigator) {
-            const hadPreviousController = Boolean(navigator.serviceWorker.controller);
+            const hadPreviousController = Boolean(navigator.serviceWorker.controller) || Boolean(localStorage.getItem('et_sw_active'));
             let refreshing = false;
+
+            if (navigator.serviceWorker.controller) {
+                localStorage.setItem('et_sw_active', '1');
+            }
 
             function showUpdateToastAndReload() {
                 if (refreshing) return;
@@ -1130,7 +1134,15 @@
                     });
             });
 
+            // iOS Friendly: Sprawdź aktualizacje po wznowieniu aplikacji z tła (App Switcher)
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    navigator.serviceWorker.ready.then(reg => reg.update()).catch(() => {});
+                }
+            });
+
             navigator.serviceWorker.addEventListener('controllerchange', () => {
+                localStorage.setItem('et_sw_active', '1');
                 if (hadPreviousController) {
                     showUpdateToastAndReload();
                 }

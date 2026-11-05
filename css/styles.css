@@ -1760,6 +1760,7 @@ button:active:not(.nav-item), .btn:active {
     pointer-events: none;
     max-width: 92vw;
     width: 380px;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px)) !important;
 }
 
 #pwa-update-toast {
