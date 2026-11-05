@@ -1751,3 +1751,30 @@ button:active:not(.nav-item), .btn:active {
 .is-pwa-standalone #install-pwa-card {
     display: none !important;
 }
+
+/* =========================================
+   PWA UPDATE TOAST NOTIFICATION
+   ========================================= */
+#pwa-toast-container {
+    z-index: 11000 !important;
+    pointer-events: none;
+    max-width: 92vw;
+    width: 380px;
+}
+
+#pwa-update-toast {
+    pointer-events: auto;
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 12px 36px rgba(2, 132, 199, 0.4), 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+[data-bs-theme="dark"] #pwa-update-toast {
+    background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 4px 14px rgba(2, 132, 199, 0.2) !important;
+}
